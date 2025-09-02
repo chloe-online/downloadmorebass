@@ -136,6 +136,9 @@
         <li>
           <p>...more coming soon...</p>
         </li>
+        <li>
+          <p>Need more bass? <a href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751">click here</a></p>
+        </li>
       </ul>
     </div>
   </div>
@@ -144,7 +147,6 @@
       Copyright 2025 <a href="https://chlo.club/">chloemusic</a> dm me your bass
       <a href="https://instagram.com/chloemusic8008">here</a>
     </p>
-    <p><a href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751">need more bass?</a></p>
     <p>All rights reserved bitch</p>
   </div>
 </main>
