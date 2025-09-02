@@ -1,5 +1,5 @@
 <script>
-  let { cover, title, description, artist, artistUrl, url, duration } =
+  let { cover, title, description, artist, artistUrl, url, duration, stars } =
     $props();
 </script>
 
@@ -17,11 +17,9 @@
     <p>Listens: 69 <invisible>nice</invisible></p>
     <!-- stars -->
     <div class="stars">
-      <span>★</span>
-      <span>★</span>
-      <span>★</span>
-      <span>★</span>
-      <span>★</span>
+      {#each Array(5) as _, i}
+        <span style="color: {i < stars ? 'currentColor' : '#ccc'}">★</span>
+      {/each}
     </div>
     <p><b>{duration}</b></p>
   </div>
@@ -31,13 +29,9 @@
   main {
     display: flex;
     flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    align-items: top;
+    justify-content: top;
     gap: 0.5rem;
-  }
-
-  .cover {
-    border: 1px solid black;
   }
 
   .song-info {
@@ -45,7 +39,6 @@
     flex-direction: column;
     align-items: start;
     justify-content: start;
-    padding: 1rem;
     width: 200px;
   }
 
@@ -66,12 +59,6 @@
 
   p invisible:hover {
     color: #000;
-  }
-
-  .vertical-line {
-    width: 1px;
-    height: 100px;
-    background-color: #000;
   }
 
   .artist-details {
@@ -95,6 +82,10 @@
     height: 100px;
     object-fit: cover;
     border-radius: 1px;
-    border: 1px solid #fff;
+    border: 1px solid #000;
+  }
+
+  .stars {
+    color: red;
   }
 </style>
