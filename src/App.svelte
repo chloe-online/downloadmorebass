@@ -5,7 +5,7 @@
   let audioContext: AudioContext | null = null;
   let isPlaying = false;
   let userInteracted = false;
-  let soundEnabled = true;
+  let soundEnabled = false;
   let currentOscillator: OscillatorNode | null = null;
 
   // Create a bass tone using Web Audio API
