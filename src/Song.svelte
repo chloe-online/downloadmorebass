@@ -88,4 +88,69 @@
   .stars {
     color: red;
   }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    main {
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .song-info {
+      width: 100%;
+      text-align: center;
+      align-items: center;
+    }
+
+    .artist-details {
+      margin-left: 0;
+      padding-left: 0;
+      border-left: none;
+      border-top: 1px solid #bbb;
+      padding-top: 0.5rem;
+      align-items: center;
+      text-align: center;
+    }
+
+    img {
+      width: 80px;
+      height: 80px;
+    }
+
+    h1 {
+      font-size: 16px;
+    }
+
+    p {
+      font-size: 13px;
+    }
+
+    .artist-details p {
+      line-height: 16px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    main {
+      gap: 0.5rem;
+    }
+
+    img {
+      width: 70px;
+      height: 70px;
+    }
+
+    h1 {
+      font-size: 14px;
+    }
+
+    p {
+      font-size: 12px;
+    }
+
+    .artist-details p {
+      line-height: 14px;
+    }
+  }
 </style>

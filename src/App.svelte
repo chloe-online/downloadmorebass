@@ -307,4 +307,84 @@
     position: relative;
     outline: none;
   }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .header h1 {
+      font-size: 2.5rem;
+    }
+
+    .sound-toggle {
+      font-size: 2.5rem;
+    }
+
+    .title-row {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .download-button {
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: center;
+    }
+
+    .download-button p {
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .container {
+      padding: 0.5rem;
+    }
+
+    .footer {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem;
+    }
+
+    .footer p {
+      font-size: 11px;
+      margin: 0;
+    }
+
+    .playlist {
+      width: 100%;
+    }
+
+    .featured-songs {
+      padding: 0.5rem 0;
+    }
+
+    .featured-songs h2 {
+      font-size: 16px;
+    }
+
+    .featured-songs p {
+      font-size: 11px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header {
+      padding: 0.5rem;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+    }
+
+    .sound-toggle {
+      font-size: 2rem;
+    }
+
+    .container {
+      padding: 0.25rem;
+    }
+
+    .footer {
+      padding: 0.5rem;
+    }
+  }
 </style>
