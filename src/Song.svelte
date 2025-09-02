@@ -116,8 +116,8 @@
     }
 
     img {
-      width: 60px;
-      height: 60px;
+      width: 100px;
+      height: 100px;
     }
 
     h1 {
@@ -139,8 +139,8 @@
     }
 
     img {
-      width: 50px;
-      height: 50px;
+      width: 100px;
+      height: 100px;
     }
 
     h1 {
