@@ -5,11 +5,18 @@
   let audioContext: AudioContext | null = null;
   let isPlaying = false;
   let userInteracted = false;
+  let soundEnabled = true;
+  let currentOscillator: OscillatorNode | null = null;
 
   // Create a bass tone using Web Audio API
   function createBassTone() {
-    if (!audioContext) {
-      audioContext = new AudioContext();
+    if (!audioContext || !soundEnabled) {
+      return;
+    }
+
+    // Stop any existing oscillator
+    if (currentOscillator) {
+      currentOscillator.stop();
     }
 
     const oscillator = audioContext.createOscillator();
@@ -42,10 +49,28 @@
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
+    // Store reference to current oscillator
+    currentOscillator = oscillator;
+
     // Play the tone
     oscillator.start(audioContext.currentTime);
 
     isPlaying = true;
+  }
+
+  // Toggle sound on/off
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+
+    if (!soundEnabled && currentOscillator) {
+      // Stop the current oscillator
+      currentOscillator.stop();
+      currentOscillator = null;
+      isPlaying = false;
+    } else if (soundEnabled && audioContext) {
+      // Start the bass tone
+      createBassTone();
+    }
   }
 
   // download a random bass file
@@ -74,7 +99,16 @@
 
 <main>
   <div class="header">
-    <h1>Download more bass</h1>
+    <div class="title-row">
+      <h1>Download more bass</h1>
+      <button
+        class="sound-toggle"
+        on:click={toggleSound}
+        class:sound-enabled={soundEnabled}
+      >
+        {soundEnabled ? "(on)" : "(off)"}
+      </button>
+    </div>
     <div class="download-button">
       <button on:click={handleUserInteraction}>DOWNLOAD</button>
       <p>Click the button to download bass to your computer.</p>
@@ -129,11 +163,42 @@
     padding: 1rem;
   }
 
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
   .header h1 {
     font-size: 4rem;
     font-weight: 900;
     color: #000;
     margin: 0;
+  }
+
+  .sound-toggle {
+    background: none;
+    border: none;
+    box-shadow: none;
+    font-family: "Arial", sans-serif;
+    font-size: 4rem;
+    font-weight: 900;
+    color: #000;
+    cursor: pointer;
+    outline: none;
+    transition: opacity 0.2s ease;
+    padding: 0;
+    margin: 0;
+  }
+
+  .sound-toggle:hover {
+    opacity: 0.7;
+  }
+
+  .sound-toggle:not(.sound-enabled) {
+    color: #666;
   }
 
   .download-button {
