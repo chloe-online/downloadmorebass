@@ -152,6 +152,7 @@
   main {
     display: flex;
     flex-direction: column;
+    color: #000;
   }
 
   .header {
@@ -319,7 +320,7 @@
     }
 
     .title-row {
-      flex-direction: column;
+      flex-direction: row;
       gap: 0.25rem;
     }
 
