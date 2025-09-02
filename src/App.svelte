@@ -144,8 +144,7 @@
       Copyright 2025 <a href="https://chlo.club/">chloemusic</a> dm me your bass
       <a href="https://instagram.com/chloemusic8008">here</a>
     </p>
-    <a href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751
-    >need more bass?</a>
+    <p><a href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751">need more bass?</a></p>
     <p>All rights reserved bitch</p>
   </div>
 </main>
