@@ -92,53 +92,32 @@
   /* Mobile styles */
   @media (max-width: 768px) {
     main {
-      flex-direction: column;
-      gap: 0.75rem;
-      align-items: center;
+      flex-direction: row;
+      gap: 0.5rem;
+      align-items: flex-start;
     }
 
     .song-info {
-      width: 100%;
-      text-align: center;
-      align-items: center;
+      width: auto;
+      flex: 1;
+      text-align: left;
+      align-items: flex-start;
     }
 
     .artist-details {
-      margin-left: 0;
-      padding-left: 0;
-      border-left: none;
-      border-top: 1px solid #bbb;
-      padding-top: 0.5rem;
-      align-items: center;
-      text-align: center;
+      margin-left: 0.5rem;
+      padding-left: 0.5rem;
+      border-left: 1px solid #bbb;
+      border-top: none;
+      padding-top: 0;
+      align-items: flex-start;
+      text-align: left;
+      min-width: 120px;
     }
 
     img {
-      width: 80px;
-      height: 80px;
-    }
-
-    h1 {
-      font-size: 16px;
-    }
-
-    p {
-      font-size: 13px;
-    }
-
-    .artist-details p {
-      line-height: 16px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    main {
-      gap: 0.5rem;
-    }
-
-    img {
-      width: 70px;
-      height: 70px;
+      width: 60px;
+      height: 60px;
     }
 
     h1 {
@@ -146,11 +125,40 @@
     }
 
     p {
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .artist-details p {
       line-height: 14px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    main {
+      gap: 0.25rem;
+    }
+
+    img {
+      width: 50px;
+      height: 50px;
+    }
+
+    h1 {
+      font-size: 12px;
+    }
+
+    p {
+      font-size: 10px;
+    }
+
+    .artist-details {
+      min-width: 100px;
+      margin-left: 0.25rem;
+      padding-left: 0.25rem;
+    }
+
+    .artist-details p {
+      line-height: 12px;
     }
   }
 </style>
