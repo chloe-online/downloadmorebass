@@ -1,5 +1,5 @@
 <script>
-  let { cover, title, description, artist, artistUrl, url, duration, stars } =
+  let { cover, title, description, artist, artistUrl, url, duration, stars, listens } =
     $props();
 </script>
 
@@ -14,7 +14,7 @@
 
   <div class="artist-details">
     <p>From: <a href={artistUrl}>{artist}</a></p>
-    <p>Listens: 69 <invisible>nice</invisible></p>
+    <p>Listens: {listens} {#if listens == 69}<invisible>nice</invisible>{/if}</p>
     <!-- stars -->
     <div class="stars">
       {#each Array(5) as _, i}
@@ -45,6 +45,9 @@
   h1 {
     font-size: 14px;
     margin: 5px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   p {

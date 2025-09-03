@@ -128,9 +128,23 @@
             description="A song about me ripping your head off, eating your guts, your brain, your intestines, and spreading your sanguine fluid over my nudile body."
             duration="02:23"
             artist="chloemusic"
+            listens={69}
             artistUrl="https://soundcloud.com/chloemusic8008"
             url="https://soundcloud.com/chloemusic8008/tear-you-apart"
             stars={3}
+          />
+        </li>
+        <li>
+          <Song
+            cover="/covers/internet_friends.jpg"
+            title="gay_internet_friends_chloemusic.wav"
+            description="Precisely as the title suggests. extremely gay and low effort..."
+            duration="04:06"
+            artist="chloemusic"
+            listens={3}
+            artistUrl="https://soundcloud.com/chloemusic8008"
+            url="https://untitled.stream/library/project/qmc7FHYf5JHBnMTDXtVOV"
+            stars={2}
           />
         </li>
         <li>
