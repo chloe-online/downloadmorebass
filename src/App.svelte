@@ -123,12 +123,25 @@
       <ul>
         <li>
           <Song
+            cover="/covers/usedtobe.png"
+            title="notwhoiusedtobe"
+            description="I made this song about a girl who's probably a bitch."
+            duration="02:57"
+            artist="chloemusic8008"
+            listens={0}
+            artistUrl="https://soundcloud.com/chloemusic8008"
+            url="https://soundcloud.com/chloemusic8008/notwhoiusedtobe"
+            stars={2}
+          />
+        </li>
+        <li>
+          <Song
             cover="/covers/tearyouapart_cover.png"
             title="Tear you apart"
             description="A song about me ripping your head off, eating your guts, your brain, your intestines, and spreading your sanguine fluid over my nudile body."
             duration="02:23"
-            artist="chloemusic"
-            listens={185}
+            artist="chloemusic8008"
+            listens={270}
             artistUrl="https://soundcloud.com/chloemusic8008"
             url="https://soundcloud.com/chloemusic8008/tear-you-apart"
             stars={3}
@@ -140,7 +153,7 @@
             title="gay_internet_friends_chloemusic.wav"
             description="Precisely as the title suggests. extremely gay and low effort..."
             duration="04:06"
-            artist="chloemusic"
+            artist="chloemusic8008"
             listens={69}
             artistUrl="https://soundcloud.com/chloemusic8008"
             url="https://untitled.stream/library/project/qmc7FHYf5JHBnMTDXtVOV"
