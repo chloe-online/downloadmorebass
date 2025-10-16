@@ -123,12 +123,25 @@
       <ul>
         <li>
           <Song
+            cover="/covers/xd.png"
+            title="XD"
+            description="fuck it, dub track. get into it bitch"
+            duration="03:45"
+            artist="chloemusic8008"
+            listens={0}
+            artistUrl="https://soundcloud.com/chloemusic8008"
+            url="https://soundcloud.com/chloemusic8008/xd?si=b4d4379ef33f4c389b3d77a90b34c2e1&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing"
+            stars={3}
+          />
+        </li>
+        <li>
+          <Song
             cover="/covers/usedtobe.png"
             title="notwhoiusedtobe"
             description="I made this song about a girl who's probably a bitch."
             duration="02:57"
             artist="chloemusic8008"
-            listens={0}
+            listens={194}
             artistUrl="https://soundcloud.com/chloemusic8008"
             url="https://soundcloud.com/chloemusic8008/notwhoiusedtobe"
             stars={2}
