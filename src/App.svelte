@@ -132,6 +132,7 @@
             artistUrl="https://soundcloud.com/chloemusic8008"
             url="https://soundcloud.com/chloemusic8008/xd?si=b4d4379ef33f4c389b3d77a90b34c2e1&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing"
             stars={3}
+            isNew={true}
           />
         </li>
         <li>

@@ -1,11 +1,16 @@
 <script>
-  let { cover, title, description, artist, artistUrl, url, duration, stars, listens } =
+  let { cover, title, description, artist, artistUrl, url, duration, stars, listens, isNew = false } =
     $props();
 </script>
 
 <main>
   <div class="cover">
-    <a href={url}><img src={cover} alt={title} /></a>
+    <a href={url}>
+      <img src={cover} alt={title} />
+      {#if isNew}
+        <span class="new-badge">NEW</span>
+      {/if}
+    </a>
   </div>
   <div class="song-info">
     <a href={url} download><h1>{title}</h1></a>
@@ -32,6 +37,24 @@
     align-items: top;
     justify-content: top;
     gap: 0.5rem;
+  }
+
+  .cover {
+    position: relative;
+  }
+
+  .new-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #ff0000;
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: bold;
+    z-index: 10;
+    pointer-events: none;
   }
 
   .song-info {
