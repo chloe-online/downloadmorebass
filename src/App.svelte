@@ -123,16 +123,29 @@
       <ul>
         <li>
           <Song
+            cover="/covers/enemy.png"
+            title="enemy"
+            description="know thy enemy. slay those that stand in your way. i will never compromise, i promise."
+            duration="03:22"
+            artist="chloemusic8008"
+            listens={0}
+            artistUrl="https://soundcloud.com/chloemusic8008"
+            url="https://on.soundcloud.com/Y1qv4RVNFvIOEtcGG5"
+            stars={3}
+            isNew={true}
+          />
+        </li>
+        <li>
+          <Song
             cover="/covers/xd.png"
             title="XD"
             description="fuck it, dub track. get into it bitch"
             duration="03:45"
             artist="chloemusic8008"
-            listens={0}
+            listens={178}
             artistUrl="https://soundcloud.com/chloemusic8008"
             url="https://soundcloud.com/chloemusic8008/xd?si=b4d4379ef33f4c389b3d77a90b34c2e1&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing"
             stars={3}
-            isNew={true}
           />
         </li>
         <li>
@@ -178,7 +191,12 @@
           <p>...more coming soon...</p>
         </li>
         <li>
-          <p>Need more bass? <a href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751">click here</a></p>
+          <p>
+            Need more bass? <a
+              href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751"
+              >click here</a
+            >
+          </p>
         </li>
       </ul>
     </div>
