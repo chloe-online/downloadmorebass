@@ -123,16 +123,30 @@
       <ul>
         <li>
           <Song
+            cover="/covers/fear.png"
+            title="fear"
+            description="my last song of the year."
+            duration="03:44"
+            artist="chloemusic8008"
+            listens={0}
+            artistUrl="https://soundcloud.com/chloemusic8008"
+            url="https://on.soundcloud.com/nrgTIENC2nxv7dJVOx"
+            stars={3}
+            isNew={true}
+          />
+        </li>
+        <li>
+          <Song
             cover="/covers/enemy.png"
             title="enemy"
             description="know thy enemy. slay those that stand in your way. i will never compromise, i promise."
             duration="03:22"
             artist="chloemusic8008"
-            listens={0}
+            listens={343}
             artistUrl="https://soundcloud.com/chloemusic8008"
             url="https://on.soundcloud.com/Y1qv4RVNFvIOEtcGG5"
             stars={3}
-            isNew={true}
+            isNew={false}
           />
         </li>
         <li>
@@ -172,19 +186,6 @@
             artistUrl="https://soundcloud.com/chloemusic8008"
             url="https://soundcloud.com/chloemusic8008/tear-you-apart"
             stars={3}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/internet_friends.jpg"
-            title="gay_internet_friends_chloemusic.wav"
-            description="Precisely as the title suggests. extremely gay and low effort..."
-            duration="04:06"
-            artist="chloemusic8008"
-            listens={69}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://untitled.stream/library/project/qmc7FHYf5JHBnMTDXtVOV"
-            stars={2}
           />
         </li>
         <li>
