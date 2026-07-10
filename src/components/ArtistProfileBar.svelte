@@ -1,47 +1,80 @@
 <script lang="ts">
-  import type { ArtistProfile } from "../../shared/types";
+  import type { ArtistProfile, WebProfile } from "../../shared/types";
 
   let { profile }: { profile: ArtistProfile } = $props();
 
   const location = $derived(
     [profile.city, profile.country].filter(Boolean).join(", "),
   );
+
+  function profileLinkLabel(link: WebProfile): string {
+    if (link.title) {
+      return link.title;
+    }
+
+    return link.service.charAt(0).toUpperCase() + link.service.slice(1);
+  }
 </script>
 
 <aside class="artist-bar">
   <h3 class="artist-bar-title">About the artist</h3>
 
-  <a class="artist-link" href={profile.permalinkUrl} target="_blank" rel="noreferrer">
+  <a
+    class="artist-link"
+    href={profile.permalinkUrl}
+    target="_blank"
+    rel="noreferrer"
+  >
     {#if profile.avatarUrl}
       <img class="avatar" src={profile.avatarUrl} alt={profile.username} />
     {:else}
-      <span class="avatar-fallback">{profile.username.slice(0, 1).toUpperCase()}</span>
+      <span class="avatar-fallback"
+        >{profile.username.slice(0, 1).toUpperCase()}</span
+      >
     {/if}
-    <span class="username">{profile.username}</span>
+    <div class="artist-meta">
+      <span class="username">{profile.username}</span>
+      {#if location}
+        <span class="location">{location}</span>
+      {/if}
+    </div>
   </a>
 
   <dl class="stats">
     <div>
-      <dt>Tracks</dt>
-      <dd>{profile.trackCount}</dd>
-    </div>
-    <div>
       <dt>Followers</dt>
       <dd>{profile.followersCount.toLocaleString()}</dd>
     </div>
+    <div>
+      <dt>Tracks</dt>
+      <dd>{profile.trackCount}</dd>
+    </div>
   </dl>
-
-  {#if location}
-    <p class="location">{location}</p>
-  {/if}
 
   {#if profile.description}
     <p class="bio">{profile.description}</p>
   {/if}
 
-  <a class="profile-button" href={profile.permalinkUrl} target="_blank" rel="noreferrer">
+  {#if profile.webProfiles.length > 0}
+    <p class="socials">
+      Socials:
+      {#each profile.webProfiles as link, i (link.url)}
+        {#if i > 0},
+        {/if}
+        <a href={link.url} target="_blank" rel="noreferrer">
+          {profileLinkLabel(link)}
+        </a>
+      {/each}
+    </p>
+  {/if}
+  <!-- <a
+    class="profile-button"
+    href={profile.permalinkUrl}
+    target="_blank"
+    rel="noreferrer"
+  >
     View profile
-  </a>
+  </a> -->
 </aside>
 
 <style>
@@ -66,7 +99,7 @@
 
   .artist-link {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 0.5rem;
     text-decoration: none;
     margin-bottom: 0.75rem;
@@ -93,6 +126,16 @@
     color: #333;
   }
 
+  .artist-meta {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    min-width: 0;
+  }
+
   .username {
     font-family: Arial, sans-serif;
     font-size: 14px;
@@ -103,6 +146,14 @@
 
   .artist-link:hover .username {
     text-decoration: underline;
+  }
+
+  .location {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    line-height: 1.3;
+    color: #666;
+    margin-top: 0.15rem;
   }
 
   .stats {
@@ -134,7 +185,6 @@
     color: #333;
   }
 
-  .location,
   .bio {
     font-family: Arial, sans-serif;
     font-size: 11px;
@@ -142,6 +192,23 @@
     color: #444;
     margin: 0 0 0.75rem;
     white-space: pre-wrap;
+  }
+
+  .socials {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    line-height: 1.3;
+    color: #666;
+    margin: 0 0 0.75rem;
+  }
+
+  .socials a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .socials a:hover {
+    text-decoration: underline;
   }
 
   .profile-button {

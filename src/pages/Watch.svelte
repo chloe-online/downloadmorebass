@@ -169,32 +169,36 @@
           </div>
 
           <h1 class="video-title">
-            {track.title} -
-            <a href={track.artistUrl} target="_blank" rel="noreferrer"
-              >{track.artist}</a
-            >
+            <span class="title-text">
+              {track.title} -
+              <a href={track.artistUrl} target="_blank" rel="noreferrer"
+                >{track.artist}</a
+              >
+            </span>
+            <span class="views">{track.listens.toLocaleString()} listens</span>
           </h1>
 
           <div class="meta-bar">
-            <span class="views">{track.listens.toLocaleString()} listens</span>
-            <span class="separator">|</span>
-            <span class="likes">{track.likes.toLocaleString()} likes</span>
-            <span class="separator">|</span>
-            {#if track.publishedAt}
-              <span class="separator">|</span>
-              <span class="published"
-                >Added on {formatDate(track.publishedAt)}</span
-              >
-            {/if}
-            <span class="separator">|</span>
             <span class="rating">
               {#each Array(5) as _, i}
                 <span class:filled={i < track.stars}>★</span>
               {/each}
             </span>
+            <span class="separator">|</span>
+            <span class="likes">{track.likes.toLocaleString()} likes</span>
+            {#if track.publishedAt}
+              <span class="separator">|</span>
+              <span class="published"
+                >Released on {formatDate(track.publishedAt)}</span
+              >
+            {/if}
           </div>
 
           <div class="uploader-box"></div>
+
+          <ExpandableText
+            text={track.description || "No description provided."}
+          />
 
           <div class="action-row">
             <button class="yt-button" onclick={shareTrack}>
@@ -209,13 +213,6 @@
             >
               Open on SoundCloud
             </a>
-          </div>
-
-          <div class="description-box">
-            <h2>Description</h2>
-            <ExpandableText
-              text={track.description || "No description provided."}
-            />
           </div>
 
           <Comments
@@ -266,6 +263,7 @@
     color: #000;
     padding-bottom: 5rem;
     min-height: 100vh;
+    max-width: var(--layout-max);
   }
 
   .watch-page {
@@ -273,6 +271,7 @@
     margin: 0 auto;
     padding: 0 0 2rem;
     box-sizing: border-box;
+    padding: 1rem;
   }
 
   .nav-row {
@@ -325,12 +324,26 @@
   }
 
   .video-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
     font-family: Arial, sans-serif;
     font-size: 20px;
     font-weight: bold;
     margin: 0 0 0.5rem;
     line-height: 1.2;
     text-align: left;
+  }
+
+  .video-title .title-text {
+    min-width: 0;
+  }
+
+  .video-title .views {
+    flex-shrink: 0;
+    font-weight: normal;
+    white-space: nowrap;
   }
 
   .video-title a {
@@ -340,7 +353,7 @@
   .meta-bar {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
     font-family: Arial, sans-serif;
     font-size: 12px;
@@ -357,6 +370,7 @@
   .rating {
     color: #ccc;
     letter-spacing: 1px;
+    /* font-size: 24px; */
   }
 
   .rating .filled {

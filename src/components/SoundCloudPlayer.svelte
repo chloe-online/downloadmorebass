@@ -24,9 +24,7 @@
   let error = $state<string | null>(null);
   let scrubbing = $state(false);
   let volumeScrubbing = $state(false);
-  let playbackSpeed = $state(1);
 
-  const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
   const SEEK_DEBOUNCE_MS = 150;
 
   let hls: Hls | null = null;
@@ -90,7 +88,6 @@
 
     audioEl.volume = volume;
     audioEl.muted = muted;
-    audioEl.playbackRate = playbackSpeed;
   }
 
   function togglePlay() {
@@ -202,10 +199,7 @@
 
   function setVolumeFromClientX(clientX: number, element: HTMLElement) {
     const rect = element.getBoundingClientRect();
-    const value = Math.min(
-      1,
-      Math.max(0, (clientX - rect.left) / rect.width),
-    );
+    const value = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
 
     volume = value;
 
@@ -275,26 +269,10 @@
     }
   }
 
-  function formatSpeed(speed: number): string {
-    return speed === 1 ? "1x" : `${speed}x`;
-  }
-
-  function cyclePlaybackSpeed() {
-    const currentIndex = PLAYBACK_SPEEDS.indexOf(playbackSpeed);
-    const nextIndex =
-      currentIndex === -1 ? 0 : (currentIndex + 1) % PLAYBACK_SPEEDS.length;
-    playbackSpeed = PLAYBACK_SPEEDS[nextIndex];
-
-    if (audioEl) {
-      audioEl.playbackRate = playbackSpeed;
-    }
-  }
-
   $effect(() => {
     const id = trackId;
     loading = true;
     error = null;
-    playbackSpeed = 1;
 
     let cancelled = false;
 
@@ -329,15 +307,28 @@
   class="yt-player"
   style:height="{height}px"
   onkeydown={(event) => {
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("button, [role='slider']")
+    ) {
+      return;
+    }
+
     if (event.key === " " || event.key === "Enter") {
       event.preventDefault();
       togglePlay();
     }
   }}
 >
-  <div class="video-stage">
+  <button
+    class="video-stage"
+    type="button"
+    aria-label={playing ? `Pause ${title}` : `Play ${title}`}
+    disabled={loading || !!error}
+    onclick={togglePlay}
+  >
     {#if cover}
-      <img class="cover" src={cover} alt={title} />
+      <img class="cover" src={cover} alt="" />
     {/if}
 
     {#if loading}
@@ -345,48 +336,43 @@
     {:else if error}
       <div class="overlay status-overlay error">{error}</div>
     {:else if !playing}
-      <button
-        class="big-play"
-        type="button"
-        aria-label="Play"
-        onclick={togglePlay}
-      >
-        <span class="big-play-icon" aria-hidden="true"></span>
-      </button>
+      <span class="big-play" aria-hidden="true">
+        <span class="big-play-icon"></span>
+      </span>
     {/if}
+  </button>
 
-    <audio
-      bind:this={audioEl}
-      preload="metadata"
-      onplay={() => {
-        playing = true;
-      }}
-      onpause={() => {
-        playing = false;
-      }}
-      ontimeupdate={() => {
-        if (!scrubbing && audioEl) {
-          currentTime = audioEl.currentTime;
-        }
-      }}
-      onloadedmetadata={() => {
-        if (audioEl) {
-          duration = audioEl.duration;
-        }
-      }}
-      ondurationchange={() => {
-        if (audioEl) {
-          duration = audioEl.duration;
-        }
-      }}
-      onended={() => {
-        playing = false;
-      }}
-      onerror={() => {
-        error = "Playback failed.";
-      }}
-    ></audio>
-  </div>
+  <audio
+    bind:this={audioEl}
+    preload="metadata"
+    onplay={() => {
+      playing = true;
+    }}
+    onpause={() => {
+      playing = false;
+    }}
+    ontimeupdate={() => {
+      if (!scrubbing && audioEl) {
+        currentTime = audioEl.currentTime;
+      }
+    }}
+    onloadedmetadata={() => {
+      if (audioEl) {
+        duration = audioEl.duration;
+      }
+    }}
+    ondurationchange={() => {
+      if (audioEl) {
+        duration = audioEl.duration;
+      }
+    }}
+    onended={() => {
+      playing = false;
+    }}
+    onerror={() => {
+      error = "Playback failed.";
+    }}
+  ></audio>
 
   <div class="controls-bar">
     <button
@@ -461,17 +447,6 @@
         ></div>
       </div>
     </div>
-
-    <button
-      class="speed-btn"
-      type="button"
-      aria-label="Playback speed {formatSpeed(playbackSpeed)}"
-      title="Playback speed"
-      disabled={loading || !!error}
-      onclick={cyclePlaybackSpeed}
-    >
-      {formatSpeed(playbackSpeed)}
-    </button>
   </div>
 </div>
 
@@ -491,7 +466,23 @@
     position: relative;
     overflow: hidden;
     min-height: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
     background: #000;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+  }
+
+  .video-stage:disabled {
+    cursor: default;
+  }
+
+  .yt-player > audio {
+    display: none;
   }
 
   .cover {
@@ -531,15 +522,14 @@
     border: 2px solid #fff;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.55);
-    cursor: pointer;
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    pointer-events: none;
   }
 
-  .big-play:hover {
+  .video-stage:hover:not(:disabled) .big-play {
     background: rgba(204, 0, 0, 0.75);
   }
 

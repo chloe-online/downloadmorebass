@@ -51,7 +51,9 @@
   </div>
 
   <div class="artist-details">
-    <p>From: <a href={artistUrl} target="_blank" rel="noreferrer">{artist}</a></p>
+    <p>
+      From: <a href={artistUrl} target="_blank" rel="noreferrer">{artist}</a>
+    </p>
     <p>
       Listens: {listens}
       {#if listens == 69}<invisible>nice</invisible>{/if}

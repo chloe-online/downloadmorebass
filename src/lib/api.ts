@@ -1,4 +1,8 @@
-import type { CommentsResponse, TracksResponse } from "../../shared/types";
+import type {
+  CommentsResponse,
+  StreamResponse,
+  TracksResponse,
+} from "../../shared/types";
 
 const apiBase = import.meta.env.VITE_API_URL ?? "";
 
@@ -27,6 +31,16 @@ export async function fetchComments(trackId: number): Promise<CommentsResponse> 
 
   if (!response.ok) {
     throw new Error(await parseError(response, "Failed to load comments"));
+  }
+
+  return response.json();
+}
+
+export async function fetchStreamUrl(trackId: number): Promise<StreamResponse> {
+  const response = await fetch(`${apiBase}/api/tracks/${trackId}/stream`);
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, "Failed to load stream"));
   }
 
   return response.json();
