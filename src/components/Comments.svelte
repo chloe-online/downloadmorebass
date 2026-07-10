@@ -1,8 +1,14 @@
 <script lang="ts">
   import type { Comment } from "../../shared/types";
 
-  let { comments, loading = false, error = null }: {
+  let {
+    comments,
+    trackUrl,
+    loading = false,
+    error = null,
+  }: {
     comments: Comment[];
+    trackUrl: string;
     loading?: boolean;
     error?: string | null;
   } = $props();
@@ -24,9 +30,19 @@
 </script>
 
 <section class="comments-section">
-  <h2 class="comments-title">
-    {loading ? "Comments" : `All Comments (${comments.length})`}
-  </h2>
+  <div class="comments-header">
+    <h2 class="comments-title">
+      {loading ? "Comments" : `All Comments (${comments.length})`}
+    </h2>
+    {#if trackUrl}
+      <a
+        class="comments-button"
+        href={trackUrl}
+        target="_blank"
+        rel="noreferrer">Post a comment on SoundCloud</a
+      >
+    {/if}
+  </div>
 
   {#if loading}
     <ul class="comments-list" aria-hidden="true">
@@ -74,7 +90,9 @@
                 {comment.user.username}
               </a>
               {#if comment.timestamp != null}
-                <span class="at-time">at {formatTimestamp(comment.timestamp)}</span>
+                <span class="at-time"
+                  >at {formatTimestamp(comment.timestamp)}</span
+                >
               {/if}
               <span class="posted-on">({formatDate(comment.createdAt)})</span>
             </div>
@@ -98,8 +116,29 @@
     font-family: Arial, sans-serif;
     font-size: 14px;
     font-weight: bold;
-    margin: 0 0 0.75rem;
     color: #333;
+  }
+
+  .comments-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .comments-button {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #03c;
+    text-decoration: none;
+    margin: 0;
+  }
+
+  .comments-button:hover {
+    text-decoration: underline;
+  }
+  .comments-button:active {
+    text-decoration: underline;
   }
 
   .comments-status {

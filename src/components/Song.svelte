@@ -45,7 +45,9 @@
 
   <div class="song-info">
     <a class="title-link" href={listenPath(slug)} onclick={openTrack}>
-      <h2>{title}</h2>
+      <h2 class="song-title">
+        {title}
+      </h2>
     </a>
     <ExpandableText text={description} />
   </div>
@@ -94,6 +96,13 @@
     pointer-events: none;
   }
 
+  .song-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
   .song-info {
     display: flex;
     flex-direction: column;
@@ -103,6 +112,9 @@
   }
 
   .title-link {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
     text-decoration: none;
     color: #03c;
   }
@@ -114,9 +126,6 @@
   h2 {
     font-size: 14px;
     margin: 5px;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
   }
 
   p {
@@ -141,12 +150,17 @@
     padding-left: 5px;
     border-left: 1px solid #bbb;
     flex-shrink: 0;
+    width: 120px;
   }
 
   .artist-details p {
     margin: 5px;
     padding: 0;
     line-height: 14px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   img {
@@ -160,11 +174,5 @@
   .stars {
     color: red;
     margin: 5px;
-  }
-
-  @media (max-width: 768px) {
-    .artist-details {
-      min-width: 120px;
-    }
   }
 </style>

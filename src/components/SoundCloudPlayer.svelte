@@ -1,6 +1,11 @@
 <script lang="ts">
   import Hls from "hls.js";
   import { fetchStreamUrl } from "../lib/api";
+  import {
+    setPlayerMuted,
+    setPlayerPlaying,
+    setPlayerVolume,
+  } from "../lib/playback.svelte";
 
   let {
     trackId,
@@ -57,9 +62,18 @@
     }
 
     playing = false;
+    setPlayerPlaying(false);
     currentTime = 0;
     duration = 0;
   }
+
+  $effect(() => {
+    setPlayerMuted(muted);
+  });
+
+  $effect(() => {
+    setPlayerVolume(volume);
+  });
 
   function setupAudio(url: string, format: "mp3" | "hls") {
     if (!audioEl) {
@@ -347,9 +361,11 @@
     preload="metadata"
     onplay={() => {
       playing = true;
+      setPlayerPlaying(true);
     }}
     onpause={() => {
       playing = false;
+      setPlayerPlaying(false);
     }}
     ontimeupdate={() => {
       if (!scrubbing && audioEl) {
@@ -368,6 +384,7 @@
     }}
     onended={() => {
       playing = false;
+      setPlayerPlaying(false);
     }}
     onerror={() => {
       error = "Playback failed.";

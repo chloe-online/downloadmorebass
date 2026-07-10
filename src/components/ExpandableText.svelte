@@ -1,7 +1,7 @@
 <script lang="ts">
   let {
     text,
-    lines = 3,
+    lines = 2,
   }: {
     text: string;
     lines?: number;

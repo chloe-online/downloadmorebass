@@ -84,7 +84,10 @@
     padding: 0.75rem;
     text-align: left;
     min-width: 0;
-    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
   }
 
   .artist-bar-title {
@@ -95,6 +98,8 @@
     color: #333;
     border-bottom: 1px solid #ddd;
     padding-bottom: 0.35rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .artist-link {
@@ -103,6 +108,7 @@
     gap: 0.5rem;
     text-decoration: none;
     margin-bottom: 0.75rem;
+    width: 100%;
   }
 
   .avatar,
@@ -161,6 +167,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
     margin: 0 0 0.75rem;
+    width: 100%;
   }
 
   .stats div {
@@ -192,6 +199,7 @@
     color: #444;
     margin: 0 0 0.75rem;
     white-space: pre-wrap;
+    width: 100%;
   }
 
   .socials {
@@ -200,6 +208,7 @@
     line-height: 1.3;
     color: #666;
     margin: 0 0 0.75rem;
+    width: 100%;
   }
 
   .socials a {

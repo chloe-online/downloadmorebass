@@ -1,6 +1,6 @@
 <footer class="site-footer">
   <p>
-    Copyright 2025 <a href="https://chlo.club/">chloemusic</a> dm me your bass
+    Copyright 2025 <a href="https://chlo.club/">chloemusic®</a> dm me your bass
     <a href="https://instagram.com/chloemusic8008">here</a>
   </p>
   <p>All rights reserved bitch</p>
@@ -8,15 +8,18 @@
 
 <style>
   .site-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    width: 100%;
+    max-width: var(--layout-max);
+    box-sizing: border-box;
+    margin-top: auto;
     padding: 1rem;
     background-color: #f0f0f0;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    flex-shrink: 0;
   }
 
   .site-footer p {
@@ -30,7 +33,6 @@
     .site-footer {
       flex-direction: column;
       gap: 0.5rem;
-      padding: 0.75rem;
     }
 
     .site-footer p {

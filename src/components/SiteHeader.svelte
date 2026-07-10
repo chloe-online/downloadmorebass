@@ -1,5 +1,7 @@
 <script lang="ts">
   import { navigate } from "../lib/router";
+  import { isPlayerAudible, playerPlayback } from "../lib/playback.svelte";
+  import { playBassTone } from "../lib/bass";
 
   let {
     showSoundToggle = false,
@@ -16,21 +18,50 @@
     navigate("/");
   }
 
-  async function handleDownload() {
-    const randomBassFile = Math.floor(Math.random() * 3) + 1;
-    const bassFile = await fetch(`/bass/${randomBassFile}.wav`);
-    const bassFileBlob = await bassFile.blob();
-    const bassFileUrl = URL.createObjectURL(bassFileBlob);
-    const a = document.createElement("a");
-    a.href = bassFileUrl;
-    a.download = `bass${randomBassFile}.wav`;
-    a.click();
-  }
+  const wooferSrc = $derived(
+    isPlayerAudible()
+      ? `/woofer.gif?play=${playerPlayback.playId}`
+      : "/woofer-still.png",
+  );
 </script>
 
 <header class="site-header">
   <div class="title-row">
-    <a class="site-title" href="/" onclick={goHome}>Download more bass</a>
+    <button
+      type="button"
+      class="woofer-button woofer-button--outer"
+      aria-label="Play bass tone"
+      onclick={() => playBassTone(55.0)}
+    >
+      <img src={wooferSrc} alt="" class="woofer" />
+    </button>
+    <button
+      type="button"
+      class="woofer-button"
+      aria-label="Play bass tone"
+      onclick={() => playBassTone(55.0)}
+    >
+      <img src={wooferSrc} alt="" class="woofer" />
+    </button>
+    <button class="logo-button" onclick={goHome} aria-label="Go to home">
+      <img src="/logo.jpg" alt="DownloadMoreBass.com" class="logo" />
+    </button>
+    <button
+      type="button"
+      class="woofer-button"
+      aria-label="Play bass tone"
+      onclick={() => playBassTone(55.0)}
+    >
+      <img src={wooferSrc} alt="" class="woofer" />
+    </button>
+    <button
+      type="button"
+      class="woofer-button woofer-button--outer"
+      aria-label="Play bass tone"
+      onclick={() => playBassTone(55.0)}
+    >
+      <img src={wooferSrc} alt="" class="woofer" />
+    </button>
     {#if showSoundToggle}
       <button
         class="sound-toggle"
@@ -41,28 +72,74 @@
       </button>
     {/if}
   </div>
-
-  <div class="download-button">
-    <button class="download-btn" onclick={handleDownload}>DOWNLOAD</button>
-    <p>&larr; Click the button to download bass to your computer.</p>
-  </div>
 </header>
 
 <style>
   .site-header {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
     width: 100%;
-    padding: 1rem;
+    padding-top: 1rem;
+  }
+
+  .logo {
+    width: 100%;
+    height: auto;
+    max-width: 248px;
+    max-height: 128px;
+    aspect-ratio: 248 / 128;
+    object-fit: cover;
+    object-position: center;
+    margin: 0;
+    display: block;
+  }
+
+  .logo-button {
+    flex: 0 1 248px;
+    min-width: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    line-height: 0;
+  }
+
+  .woofer-button {
+    flex: 0 1 128px;
+    min-width: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    line-height: 0;
+  }
+
+  .woofer-button:active .woofer {
+    transform: scale(0.94);
+  }
+
+  .woofer {
+    width: 100%;
+    height: auto;
+    max-width: 128px;
+    aspect-ratio: 1;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+    transition: transform 0.08s ease-out;
   }
 
   .title-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+    justify-content: space-between;
+    gap: 0.25rem;
+    width: 100%;
+    min-width: 0;
   }
 
   .site-title {
@@ -98,6 +175,10 @@
   }
 
   @media (max-width: 768px) {
+    .woofer-button--outer {
+      display: none;
+    }
+
     .site-title {
       font-size: 2.5rem;
     }
@@ -114,59 +195,6 @@
 
     .sound-toggle {
       font-size: 2rem;
-    }
-  }
-
-  .download-button {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    width: 100%;
-  }
-
-  .download-button p {
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    margin: 0;
-    color: #333;
-  }
-
-  .download-btn {
-    font-family: Arial, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 900;
-    color: #333;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
-    border: 1px solid #d3d3d3;
-    border-radius: 3px;
-    cursor: pointer;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-    transition: all 0.1s ease;
-    outline: none;
-    padding: 0.375rem 2.5rem;
-    line-height: 1;
-  }
-
-  .download-btn:hover {
-    border-color: #999;
-  }
-
-  @media (max-width: 768px) {
-    .download-button {
-      flex-direction: column;
-      gap: 0.5rem;
-      text-align: center;
-    }
-
-    .download-btn {
-      font-size: 1rem;
-      padding: 0.3rem 2rem;
     }
   }
 </style>
