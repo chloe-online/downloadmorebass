@@ -8,13 +8,10 @@
   ],
   "scripts": {
     "dev": "vite",
-    "dev:worker": "npm run dev --workspace=worker",
-    "dev:all": "npm run dev:worker & npm run dev",
     "build": "vite build",
     "preview": "npm run build && wrangler dev",
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && npm run check --workspace=worker",
-    "deploy": "npm run build && wrangler deploy",
-    "deploy:worker": "npm run deploy --workspace=worker"
+    "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.44.0",

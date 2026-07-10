@@ -6,42 +6,54 @@ import type {
 
 const apiBase = import.meta.env.VITE_API_URL ?? "";
 
-async function parseError(response: Response, fallback: string): Promise<string> {
-  const body = await response.json().catch(() => ({}));
+async function readBody(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    throw new Error(
+      `Unexpected non-JSON response (${response.status}): ${text.slice(0, 120).trim()}`,
+    );
+  }
+}
+
+function errorMessage(body: unknown, fallback: string, status: number): string {
   return typeof body === "object" &&
     body !== null &&
     "error" in body &&
     typeof body.error === "string"
     ? body.error
-    : `${fallback} (${response.status})`;
+    : `${fallback} (${status})`;
+}
+
+async function parseResponse<T>(
+  response: Response,
+  fallback: string,
+): Promise<T> {
+  const body = await readBody(response);
+
+  if (!response.ok) {
+    throw new Error(errorMessage(body, fallback, response.status));
+  }
+
+  return body as T;
 }
 
 export async function fetchTracks(): Promise<TracksResponse> {
   const response = await fetch(`${apiBase}/api/tracks`);
-
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Failed to load tracks"));
-  }
-
-  return response.json();
+  return parseResponse(response, "Failed to load tracks");
 }
 
 export async function fetchComments(trackId: number): Promise<CommentsResponse> {
   const response = await fetch(`${apiBase}/api/tracks/${trackId}/comments`);
-
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Failed to load comments"));
-  }
-
-  return response.json();
+  return parseResponse(response, "Failed to load comments");
 }
 
 export async function fetchStreamUrl(trackId: number): Promise<StreamResponse> {
   const response = await fetch(`${apiBase}/api/tracks/${trackId}/stream`);
-
-  if (!response.ok) {
-    throw new Error(await parseError(response, "Failed to load stream"));
-  }
-
-  return response.json();
+  return parseResponse(response, "Failed to load stream");
 }

@@ -12,7 +12,6 @@ dist
 dist-ssr
 *.local
 .wrangler
-worker/.dev.vars
 .env
 .env.*
 !.env.example
@@ -29,8 +28,5 @@ worker/.dev.vars
 *.sw?
 
 # wrangler files
-.wrangler
 .dev.vars*
 !.dev.vars.example
-.env*
-!.env.example

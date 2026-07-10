@@ -14,30 +14,23 @@
 npm install
 ```
 
-2. Configure SoundCloud credentials for local worker development:
+2. Configure SoundCloud credentials for local development:
 
 ```bash
-cp worker/.dev.vars.example worker/.dev.vars
+cp .dev.vars.example .dev.vars
 ```
 
-Edit `worker/.dev.vars` with your SoundCloud API credentials. Register an app at [SoundCloud Developers](https://developers.soundcloud.com/) to get a `client_id` and `client_secret`.
+Edit `.dev.vars` with your SoundCloud API credentials. Register an app at [SoundCloud Developers](https://developers.soundcloud.com/) to get a `client_id` and `client_secret`.
 
-3. Set the SoundCloud user to pull tracks from in `worker/wrangler.toml` (`SOUNDCLOUD_USER`).
+3. Set the SoundCloud user to pull tracks from in `wrangler.jsonc` (`vars.SOUNDCLOUD_USER`).
 
 ## Development
 
-Run the frontend and worker together:
-
 ```bash
-npm run dev:all
+npm run dev
 ```
 
-Or run them separately in two terminals:
-
-```bash
-npm run dev:worker   # http://localhost:8787
-npm run dev          # http://localhost:5173 (proxies /api to the worker)
-```
+The Cloudflare Vite plugin serves the frontend and Worker together, so `/api/*` is handled by the Worker on the same origin.
 
 ## API
 
@@ -45,22 +38,20 @@ The worker exposes:
 
 - `GET /api/tracks` — fetches tracks for the configured SoundCloud user
 - `GET /api/tracks/:id/comments` — fetches comments for a track
+- `GET /api/tracks/:id/stream` — resolves a stream URL for a track
 - `GET /api/health` — health check
 
 ## Deployment
 
-Deploy the worker:
-
 ```bash
-npm run deploy:worker
+npm run deploy
 ```
 
-Set production secrets:
+Set production secrets (once per Worker):
 
 ```bash
-cd worker
 wrangler secret put SOUNDCLOUD_CLIENT_ID
 wrangler secret put SOUNDCLOUD_CLIENT_SECRET
 ```
 
-If the frontend is hosted on a different domain than the worker, set `VITE_API_URL` to the worker URL when building the frontend.
+If the frontend is hosted on a different domain than the Worker, set `VITE_API_URL` to the Worker URL when building the frontend.
