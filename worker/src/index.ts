@@ -1,5 +1,5 @@
-import type { TracksResponse } from "../../shared/types";
-import { fetchUserTracks, type Env } from "./soundcloud";
+import type { CommentsResponse, TracksResponse } from "../../shared/types";
+import { fetchTrackComments, fetchUserTracks, type Env } from "./soundcloud";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +36,13 @@ export default {
 
       if (url.pathname === "/api/tracks") {
         const data: TracksResponse = await fetchUserTracks(env);
+        return jsonResponse(data);
+      }
+
+      const commentsMatch = url.pathname.match(/^\/api\/tracks\/(\d+)\/comments$/);
+      if (commentsMatch) {
+        const trackId = Number(commentsMatch[1]);
+        const data: CommentsResponse = await fetchTrackComments(env, trackId);
         return jsonResponse(data);
       }
 

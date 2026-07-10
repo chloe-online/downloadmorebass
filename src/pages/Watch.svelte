@@ -1,17 +1,26 @@
 <script lang="ts">
   import SoundCloudPlayer from "../components/SoundCloudPlayer.svelte";
+  import Comments from "../components/Comments.svelte";
+  import ArtistProfileBar from "../components/ArtistProfileBar.svelte";
+  import ExpandableText from "../components/ExpandableText.svelte";
+  import WatchPageSkeleton from "../components/WatchPageSkeleton.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
+  import { fetchComments } from "../lib/api";
   import { navigate, listenPath } from "../lib/router";
   import { findTrackBySlug, getTracks, trackSlug } from "../lib/tracks";
-  import type { Track } from "../../shared/types";
+  import type { ArtistProfile, Comment, Track } from "../../shared/types";
 
   let { slug }: { slug: string | null } = $props();
 
   let track = $state<Track | undefined>();
+  let artistProfile = $state<ArtistProfile | undefined>();
   let relatedTracks = $state<Track[]>([]);
+  let comments = $state<Comment[]>([]);
   let loading = $state(true);
+  let commentsLoading = $state(false);
   let error = $state<string | null>(null);
+  let commentsError = $state<string | null>(null);
 
   function goHome(event: MouseEvent) {
     event.preventDefault();
@@ -43,6 +52,7 @@
         if (cancelled) return;
 
         track = findTrackBySlug(currentSlug);
+        artistProfile = data.user;
         relatedTracks = data.tracks.filter(
           (item) => trackSlug(item.url) !== currentSlug,
         );
@@ -65,6 +75,41 @@
       cancelled = true;
     };
   });
+
+  $effect(() => {
+    const currentTrack = track;
+
+    comments = [];
+    commentsError = null;
+
+    if (!currentTrack) {
+      commentsLoading = false;
+      return;
+    }
+
+    let cancelled = false;
+    commentsLoading = true;
+
+    fetchComments(currentTrack.id)
+      .then((data) => {
+        if (cancelled) return;
+        comments = data.comments;
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        commentsError =
+          err instanceof Error ? err.message : "Failed to load comments";
+      })
+      .finally(() => {
+        if (!cancelled) {
+          commentsLoading = false;
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  });
 </script>
 
 <main>
@@ -78,7 +123,7 @@
     </div>
 
     {#if loading}
-      <p class="status">Loading track...</p>
+      <WatchPageSkeleton />
     {:else if error || !track}
       <p class="status error">{error ?? "Track not found."}</p>
       <button class="yt-button" onclick={goHome}>Go home</button>
@@ -104,7 +149,7 @@
           </div>
 
           <div class="uploader-box">
-            <span class="label">From:</span>
+            <span class="label">Channel:</span>
             <a href={track.artistUrl} target="_blank" rel="noreferrer"
               >{track.artist}</a
             >
@@ -128,11 +173,16 @@
 
           <div class="description-box">
             <h2>Description</h2>
-            <p>{track.description || "No description provided."}</p>
+            <ExpandableText text={track.description || "No description provided."} />
           </div>
+
+          <Comments {comments} loading={commentsLoading} error={commentsError} />
         </section>
 
         <aside class="sidebar">
+          {#if artistProfile}
+            <ArtistProfileBar profile={artistProfile} />
+          {/if}
           <h2 class="sidebar-title">More bass</h2>
           <ul class="related-list">
             {#each relatedTracks as related (related.url)}
@@ -174,9 +224,8 @@
 
   .watch-page {
     width: 100%;
-    max-width: 1100px;
     margin: 0 auto;
-    padding: 0 1rem 2rem;
+    padding: 0 0 2rem;
     box-sizing: border-box;
   }
 
@@ -194,10 +243,35 @@
   }
 
   .watch-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 1.5rem;
-    align-items: start;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    width: 100%;
+    max-width: var(--layout-max);
+  }
+
+  .primary {
+    width: 100%;
+    max-width: var(--song-max);
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  .sidebar {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .sidebar-title {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 0;
+    text-align: left;
+    color: #333;
   }
 
   .player-shell {
@@ -295,18 +369,8 @@
     color: #333;
   }
 
-  .description-box p {
-    font-family: Arial, sans-serif;
-    font-size: 12px;
+  .description-box :global(.expandable-text p) {
     margin: 0;
-    line-height: 1.4;
-    color: #333;
-    white-space: pre-wrap;
-  }
-
-  .sidebar {
-    border-left: 1px solid #ccc;
-    padding-left: 1rem;
   }
 
   .sidebar-title {
@@ -388,16 +452,14 @@
     display: inline-block;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 768px) {
     .watch-layout {
-      grid-template-columns: 1fr;
+      flex-direction: column;
+      max-width: 100%;
     }
 
-    .sidebar {
-      border-left: none;
-      border-top: 1px solid #ccc;
-      padding-left: 0;
-      padding-top: 1rem;
+    .primary {
+      max-width: 100%;
     }
   }
 </style>

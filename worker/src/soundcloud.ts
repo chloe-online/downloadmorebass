@@ -1,4 +1,4 @@
-import type { Track } from "../../shared/types";
+import type { ArtistProfile, Comment, Track } from "../../shared/types";
 
 export interface Env {
   SOUNDCLOUD_CLIENT_ID: string;
@@ -16,9 +16,16 @@ interface SoundCloudUser {
   id: number;
   username: string;
   permalink_url: string;
+  avatar_url: string | null;
+  description: string | null;
+  city: string | null;
+  country: string | null;
+  followers_count?: number;
+  track_count?: number;
 }
 
 interface SoundCloudTrack {
+  id: number;
   title: string;
   description: string | null;
   duration: number;
@@ -28,6 +35,18 @@ interface SoundCloudTrack {
   created_at: string;
   user: {
     username: string;
+    permalink_url: string;
+  };
+}
+
+interface SoundCloudComment {
+  id: number;
+  body: string;
+  created_at: string;
+  timestamp: number | null;
+  user: {
+    username: string;
+    avatar_url: string | null;
     permalink_url: string;
   };
 }
@@ -156,8 +175,30 @@ function isRecentlyCreated(createdAt: string, days = 30): boolean {
   return created >= cutoff;
 }
 
+function formatAvatarUrl(avatarUrl: string | null): string {
+  if (!avatarUrl) {
+    return "";
+  }
+
+  return avatarUrl.replace("-large", "-t200x200");
+}
+
+function toArtistProfile(user: SoundCloudUser, trackCount: number): ArtistProfile {
+  return {
+    username: user.username,
+    permalinkUrl: user.permalink_url,
+    avatarUrl: formatAvatarUrl(user.avatar_url),
+    description: user.description?.trim() ?? "",
+    city: user.city ?? "",
+    country: user.country ?? "",
+    followersCount: user.followers_count ?? 0,
+    trackCount,
+  };
+}
+
 function toTrack(track: SoundCloudTrack): Track {
   return {
+    id: track.id,
     cover: formatArtworkUrl(track.artwork_url),
     title: track.title,
     description: track.description?.trim() ?? "",
@@ -176,10 +217,62 @@ export async function fetchUserTracks(env: Env) {
   const rawTracks = await fetchAllUserTracks(env, user.id);
 
   return {
-    user: {
-      username: user.username,
-      permalinkUrl: user.permalink_url,
-    },
+    user: toArtistProfile(user, rawTracks.length),
     tracks: rawTracks.map(toTrack),
+  };
+}
+
+async function fetchAllTrackComments(
+  env: Env,
+  trackId: number,
+): Promise<SoundCloudComment[]> {
+  const comments: SoundCloudComment[] = [];
+  let nextPath: string | null =
+    `/tracks/${trackId}/comments?linked_partitioning=true&limit=50`;
+
+  while (nextPath) {
+    const page: PaginatedCollection<SoundCloudComment> | SoundCloudComment[] =
+      await soundCloudFetch<
+        PaginatedCollection<SoundCloudComment> | SoundCloudComment[]
+      >(env, nextPath);
+
+    if (Array.isArray(page)) {
+      comments.push(...page);
+      break;
+    }
+
+    comments.push(...page.collection);
+
+    if (page.next_href) {
+      const nextHref: string = page.next_href;
+      const nextUrl = new URL(nextHref);
+      nextPath = `${nextUrl.pathname}${nextUrl.search}`;
+    } else {
+      nextPath = null;
+    }
+  }
+
+  return comments;
+}
+
+function toComment(comment: SoundCloudComment): Comment {
+  return {
+    id: comment.id,
+    body: comment.body,
+    createdAt: comment.created_at,
+    timestamp: comment.timestamp,
+    user: {
+      username: comment.user.username,
+      avatarUrl: comment.user.avatar_url ?? "",
+      profileUrl: comment.user.permalink_url,
+    },
+  };
+}
+
+export async function fetchTrackComments(env: Env, trackId: number) {
+  const rawComments = await fetchAllTrackComments(env, trackId);
+
+  return {
+    comments: rawComments.map(toComment),
   };
 }

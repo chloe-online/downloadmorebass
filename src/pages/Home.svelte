@@ -1,18 +1,22 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Song from "../components/Song.svelte";
+  import SongSkeleton from "../components/SongSkeleton.svelte";
+  import ArtistProfileBar from "../components/ArtistProfileBar.svelte";
+  import ArtistProfileBarSkeleton from "../components/ArtistProfileBarSkeleton.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import { getTracks } from "../lib/tracks";
-  import type { Track } from "../../shared/types";
+  import type { ArtistProfile, Track } from "../../shared/types";
 
-  let tracks: Track[] = [];
-  let artistUsername = "chloemusic8008";
-  let tracksLoading = true;
-  let tracksError: string | null = null;
-  let soundEnabled = false;
-  let audioContext: AudioContext | null = null;
-  let currentOscillator: OscillatorNode | null = null;
+  let tracks: Track[] = $state<Track[]>([]);
+  let artistProfile = $state<ArtistProfile | undefined>();
+  let artistUsername = $state<string>("");
+  let tracksLoading = $state(true);
+  let tracksError = $state<string | null>(null);
+  let soundEnabled = $state(false);
+  let audioContext = $state<AudioContext | null>(null);
+  let currentOscillator = $state<OscillatorNode | null>(null);
 
   function createBassTone() {
     if (!audioContext || !soundEnabled) {
@@ -82,6 +86,7 @@
     getTracks()
       .then((data) => {
         tracks = data.tracks;
+        artistProfile = data.user;
         artistUsername = data.user.username;
       })
       .catch((error: unknown) => {
@@ -95,57 +100,71 @@
 </script>
 
 <main>
-  <SiteHeader
-    showSoundToggle
-    {soundEnabled}
-    onToggleSound={toggleSound}
-  />
+  <SiteHeader showSoundToggle {soundEnabled} onToggleSound={toggleSound} />
 
   <div class="download-button">
-    <button onclick={handleUserInteraction}>DOWNLOAD</button>
+    <button class="download-btn" onclick={handleUserInteraction}>DOWNLOAD</button>
     <p>Click the button to download bass to your computer.</p>
   </div>
 
   <div class="container">
-    <div class="playlist">
-      <div class="featured-songs">
-        <h2>Featured songs</h2>
-        <p>Featured songs selected by {artistUsername}</p>
-      </div>
-      <ul>
-        {#if tracksLoading}
-          <li><p>Loading tracks...</p></li>
-        {:else if tracksError}
-          <li><p class="error">{tracksError}</p></li>
-        {:else if tracks.length === 0}
-          <li><p>No tracks found.</p></li>
-        {:else}
-          {#each tracks as track (track.url)}
+    <div class="home-layout">
+      <div class="tracks-column">
+        <div class="playlist">
+          <div class="featured-songs">
+            <h2>Featured songs</h2>
+            {#if tracksLoading}
+              <span class="skeleton featured-subtitle" aria-hidden="true"></span>
+            {:else}
+              <p>Featured songs selected by {artistUsername}</p>
+            {/if}
+          </div>
+          <ul>
+            {#if tracksError}
+              <li><p class="error">{tracksError}</p></li>
+            {:else if tracksLoading}
+              {#each Array(5) as _, i (i)}
+                <li><SongSkeleton /></li>
+              {/each}
+            {:else if tracks.length === 0}
+              <li><p>No tracks found.</p></li>
+            {:else}
+              {#each tracks as track (track.url)}
+                <li>
+                  <Song
+                    cover={track.cover}
+                    title={track.title}
+                    description={track.description}
+                    duration={track.duration}
+                    artist={track.artist}
+                    listens={track.listens}
+                    artistUrl={track.artistUrl}
+                    url={track.url}
+                    stars={track.stars}
+                    isNew={track.isNew}
+                  />
+                </li>
+              {/each}
+            {/if}
             <li>
-              <Song
-                cover={track.cover}
-                title={track.title}
-                description={track.description}
-                duration={track.duration}
-                artist={track.artist}
-                listens={track.listens}
-                artistUrl={track.artistUrl}
-                url={track.url}
-                stars={track.stars}
-                isNew={track.isNew}
-              />
+              <p>
+                Need more bass? <a
+                  href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751"
+                  >click here</a
+                >
+              </p>
             </li>
-          {/each}
+          </ul>
+        </div>
+      </div>
+
+      <aside class="artist-column">
+        {#if tracksLoading}
+          <ArtistProfileBarSkeleton />
+        {:else if artistProfile}
+          <ArtistProfileBar profile={artistProfile} />
         {/if}
-        <li>
-          <p>
-            Need more bass? <a
-              href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751"
-              >click here</a
-            >
-          </p>
-        </li>
-      </ul>
+      </aside>
     </div>
   </div>
 
@@ -167,14 +186,68 @@
     justify-content: center;
     gap: 1rem;
     margin-bottom: 1rem;
+    width: 100%;
+  }
+
+  .download-button p {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    margin: 0;
+    color: #333;
+  }
+
+  .download-btn {
+    font-family: Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #333;
+    background: transparent
+      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
+      no-repeat scroll 0 -137px;
+    border: 1px solid #d3d3d3;
+    border-radius: 3px;
+    cursor: pointer;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    transition: all 0.1s ease;
+    outline: none;
+    padding: 0.375rem 2.5rem;
+    line-height: 1;
+  }
+
+  .download-btn:hover {
+    border-color: #999;
   }
 
   .container {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
     padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .home-layout {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    width: 100%;
+    max-width: var(--layout-max);
+    margin: 0 auto;
+  }
+
+  .tracks-column {
+    width: 100%;
+    max-width: var(--song-max);
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  .artist-column {
+    flex: 1;
+    min-width: 0;
+    position: sticky;
+    top: 1rem;
   }
 
   .playlist {
@@ -183,7 +256,6 @@
     align-items: left;
     justify-content: left;
     width: 100%;
-    max-width: 960px;
   }
 
   .featured-songs {
@@ -203,6 +275,12 @@
   .featured-songs p {
     margin: 0;
     font-size: 12px;
+  }
+
+  .featured-subtitle {
+    height: 12px;
+    width: 180px;
+    margin-top: 2px;
   }
 
   .error {
@@ -227,21 +305,6 @@
     border-top: 1px dotted #bbb;
   }
 
-  button {
-    font-family: "Arial", sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
-    border: 1px solid #d3d3d3;
-    border-radius: 3px;
-    cursor: pointer;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-  }
-
   @media (max-width: 768px) {
     .download-button {
       flex-direction: column;
@@ -249,8 +312,26 @@
       text-align: center;
     }
 
+    .download-btn {
+      font-size: 1rem;
+      padding: 0.3rem 2rem;
+    }
+
     .container {
       padding: 0.5rem;
+    }
+
+    .home-layout {
+      flex-direction: column;
+    }
+
+    .tracks-column {
+      max-width: 100%;
+    }
+
+    .artist-column {
+      position: static;
+      width: 100%;
     }
   }
 </style>

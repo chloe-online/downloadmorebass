@@ -1,4 +1,16 @@
+export interface ArtistProfile {
+  username: string;
+  permalinkUrl: string;
+  avatarUrl: string;
+  description: string;
+  city: string;
+  country: string;
+  followersCount: number;
+  trackCount: number;
+}
+
 export interface Track {
+  id: number;
   cover: string;
   title: string;
   description: string;
@@ -11,10 +23,23 @@ export interface Track {
   isNew: boolean;
 }
 
-export interface TracksResponse {
+export interface Comment {
+  id: number;
+  body: string;
+  createdAt: string;
+  timestamp: number | null;
   user: {
     username: string;
-    permalinkUrl: string;
+    avatarUrl: string;
+    profileUrl: string;
   };
+}
+
+export interface CommentsResponse {
+  comments: Comment[];
+}
+
+export interface TracksResponse {
+  user: ArtistProfile;
   tracks: Track[];
 }

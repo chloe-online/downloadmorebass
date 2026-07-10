@@ -44,6 +44,7 @@ npm run dev          # http://localhost:5173 (proxies /api to the worker)
 The worker exposes:
 
 - `GET /api/tracks` — fetches tracks for the configured SoundCloud user
+- `GET /api/tracks/:id/comments` — fetches comments for a track
 - `GET /api/health` — health check
 
 ## Deployment

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { navigate, listenPath } from "../lib/router";
   import { trackSlug } from "../lib/tracks";
+  import ExpandableText from "./ExpandableText.svelte";
 
   let {
     cover,
@@ -13,6 +14,17 @@
     stars,
     listens,
     isNew = false,
+  }: {
+    cover: string;
+    title: string;
+    description: string;
+    artist: string;
+    artistUrl: string;
+    url: string;
+    duration: string;
+    stars: number;
+    listens: number;
+    isNew?: boolean;
   } = $props();
 
   const slug = $derived(trackSlug(url));
@@ -35,13 +47,11 @@
     <a class="title-link" href={listenPath(slug)} onclick={openTrack}>
       <h2>{title}</h2>
     </a>
-    <p>{description}</p>
+    <ExpandableText text={description} />
   </div>
 
   <div class="artist-details">
-    <p>
-      From: <a href={artistUrl} target="_blank" rel="noreferrer">{artist}</a>
-    </p>
+    <p>From: <a href={artistUrl} target="_blank" rel="noreferrer">{artist}</a></p>
     <p>
       Listens: {listens}
       {#if listens == 69}<invisible>nice</invisible>{/if}
@@ -86,7 +96,6 @@
     display: flex;
     flex-direction: column;
     align-items: start;
-    width: 200px;
     flex: 1;
     min-width: 0;
   }
@@ -152,10 +161,6 @@
   }
 
   @media (max-width: 768px) {
-    .song-info {
-      width: auto;
-    }
-
     .artist-details {
       min-width: 120px;
     }

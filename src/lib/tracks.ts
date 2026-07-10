@@ -16,6 +16,10 @@ export async function getTracks(): Promise<TracksResponse> {
   return cache;
 }
 
+export function getArtistProfile() {
+  return cache?.user;
+}
+
 export function findTrackBySlug(slug: string): Track | undefined {
   const normalized = normalizeSlug(slug);
   return cache?.tracks.find(
