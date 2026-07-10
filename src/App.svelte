@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Song from "./Song.svelte";
+  import Song from "./components/Song.svelte";
   import { fetchTracks } from "./lib/api";
   import type { Track } from "../shared/types";
 
