@@ -1,455 +1,198 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Song from "./Song.svelte";
+  import Home from "./pages/Home.svelte";
+  import Watch from "./pages/Watch.svelte";
+  import WooferRail from "./components/WooferRail.svelte";
+  import { getLocation, initRouter, subscribe } from "./lib/router";
+  import type { Location } from "./lib/router";
+  import {
+    isPlayerAudible,
+    playerPlayback,
+    resetPlayerPlayback,
+  } from "./lib/playback.svelte";
 
-  let audioContext: AudioContext | null = null;
-  let isPlaying = false;
-  let userInteracted = false;
-  let soundEnabled = false;
-  let currentOscillator: OscillatorNode | null = null;
+  let location = $state<Location>(getLocation());
+  let mainEl = $state<HTMLElement | null>(null);
+  /** Natural content height for rail tile counts — never includes stretch-to-rails space. */
+  let contentHeight = $state(0);
+  /** Rail column height; main column min-height matches so the footer sits at the bottom. */
+  let railHeight = $state(0);
 
-  // Create a bass tone using Web Audio API
-  function createBassTone() {
-    if (!audioContext || !soundEnabled) {
+  onMount(() => {
+    const cleanupRouter = initRouter();
+    const unsubscribe = subscribe((next) => {
+      location = next;
+    });
+
+    return () => {
+      unsubscribe();
+      cleanupRouter();
+    };
+  });
+
+  $effect(() => {
+    if (location.route !== "listen") {
+      resetPlayerPlayback();
+    }
+  });
+
+  /** Height of an element's contents, ignoring flex-grow stretch on the element itself. */
+  function contentBoxHeight(el: HTMLElement): number {
+    const style = getComputedStyle(el);
+    const paddingY =
+      (parseFloat(style.paddingTop) || 0) +
+      (parseFloat(style.paddingBottom) || 0);
+
+    if (el.children.length === 0) {
+      return el.scrollHeight;
+    }
+
+    let total = paddingY;
+    for (const child of el.children) {
+      const childEl = child as HTMLElement;
+      const childStyle = getComputedStyle(childEl);
+      const mt =
+        childStyle.marginTop === "auto"
+          ? 0
+          : parseFloat(childStyle.marginTop) || 0;
+      const mb =
+        childStyle.marginBottom === "auto"
+          ? 0
+          : parseFloat(childStyle.marginBottom) || 0;
+      total += childEl.offsetHeight + mt + mb;
+    }
+    return total;
+  }
+
+  /**
+   * Page height from real content only. Flex-grow / margin-top:auto spacers are
+   * ignored so stretching the column to match the rails cannot feed back.
+   */
+  function measureIntrinsicHeight(pageMain: HTMLElement): number {
+    const page = pageMain.firstElementChild as HTMLElement | null;
+    if (!page) {
+      return 0;
+    }
+
+    let total = 0;
+    for (const child of page.children) {
+      const el = child as HTMLElement;
+      const style = getComputedStyle(el);
+      const mt =
+        style.marginTop === "auto" ? 0 : parseFloat(style.marginTop) || 0;
+      const mb =
+        style.marginBottom === "auto" ? 0 : parseFloat(style.marginBottom) || 0;
+      const flexGrow = parseFloat(style.flexGrow) || 0;
+
+      const h =
+        flexGrow > 0 || style.marginTop === "auto"
+          ? contentBoxHeight(el)
+          : el.offsetHeight;
+
+      total += h + mt + mb;
+    }
+
+    const mainStyle = getComputedStyle(pageMain);
+    total +=
+      (parseFloat(mainStyle.paddingTop) || 0) +
+      (parseFloat(mainStyle.paddingBottom) || 0);
+
+    return total;
+  }
+
+  $effect(() => {
+    const el = mainEl;
+    if (!el) {
       return;
     }
 
-    // Stop any existing oscillator
-    if (currentOscillator) {
-      currentOscillator.stop();
+    const update = () => {
+      const next = Math.max(measureIntrinsicHeight(el), window.innerHeight);
+      if (Math.abs(next - contentHeight) > 0.5) {
+        contentHeight = next;
+      }
+    };
+
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    const page = el.firstElementChild;
+    if (page) {
+      observer.observe(page);
+      for (const child of page.children) {
+        observer.observe(child);
+      }
     }
+    update();
 
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    // Set up bass frequency (around 60-80 Hz for deep bass)
-    oscillator.frequency.setValueAtTime(60, audioContext.currentTime);
-    oscillator.type = "triangle"; // Sine wave for smooth bass tone
-
-    // Set up volume envelope
-    // Create pumping effect by oscillating the gain
-    const pumpFrequency = 2; // 2Hz = pump twice per second
-    const now = audioContext.currentTime;
-
-    // Start at 0 gain
-    gainNode.gain.setValueAtTime(0, now);
-
-    // Create repeating ramp up/down pattern
-    for (let i = 0; i < 100; i++) {
-      // Arbitrary number of repeats
-      const startTime = now + i / pumpFrequency;
-      const peakTime = startTime + 0.25 / pumpFrequency;
-      const endTime = startTime + 1 / pumpFrequency;
-
-      gainNode.gain.linearRampToValueAtTime(1, peakTime);
-      gainNode.gain.linearRampToValueAtTime(0, endTime);
-    }
-
-    // Connect nodes
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    // Store reference to current oscillator
-    currentOscillator = oscillator;
-
-    // Play the tone
-    oscillator.start(audioContext.currentTime);
-
-    isPlaying = true;
-  }
-
-  // Toggle sound on/off
-  function toggleSound() {
-    soundEnabled = !soundEnabled;
-
-    if (!soundEnabled && currentOscillator) {
-      // Stop the current oscillator
-      currentOscillator.stop();
-      currentOscillator = null;
-      isPlaying = false;
-    } else if (soundEnabled && audioContext) {
-      // Start the bass tone
-      createBassTone();
-    }
-  }
-
-  // download a random bass file
-  async function handleUserInteraction() {
-    const randomBassFile = Math.floor(Math.random() * 3) + 1;
-    const bassFile = await fetch(`/bass/${randomBassFile}.wav`);
-    const bassFileBlob = await bassFile.blob();
-    const bassFileUrl = URL.createObjectURL(bassFileBlob);
-    const a = document.createElement("a");
-    a.href = bassFileUrl;
-    a.download = `bass${randomBassFile}.wav`;
-    a.click();
-  }
-
-  onMount(() => {
-    try {
-      audioContext = new AudioContext();
-
-      // Attempt to play immediately (may be blocked by browser)
-      createBassTone();
-    } catch (error) {
-      console.log("Audio context creation failed:", error);
-    }
+    return () => observer.disconnect();
   });
+
+  function onRailHeight(height: number) {
+    if (Math.abs(height - railHeight) > 0.5) {
+      railHeight = height;
+    }
+  }
+
+  const railImage = $derived(
+    isPlayerAudible()
+      ? `/woofer.gif?play=${playerPlayback.playId}`
+      : "/woofer-still.png",
+  );
+
+  const pageMinHeight = $derived(
+    railHeight > 0 ? `max(100vh, ${railHeight}px)` : "100vh",
+  );
 </script>
 
-<main>
-  <div class="header">
-    <div class="title-row">
-      <h1>Download more bass</h1>
-      <button
-        class="sound-toggle"
-        on:click={toggleSound}
-        class:sound-enabled={soundEnabled}
-      >
-        {soundEnabled ? "(on)" : "(off)"}
-      </button>
-    </div>
-    <div class="download-button">
-      <button on:click={handleUserInteraction}>DOWNLOAD</button>
-      <p>Click the button to download bass to your computer.</p>
-    </div>
+<div class="page-shell">
+  <WooferRail
+    src={railImage}
+    height={contentHeight}
+    onHeightChange={onRailHeight}
+  />
+  <div class="page-main" bind:this={mainEl} style:min-height={pageMinHeight}>
+    {#if location.route === "listen"}
+      <Watch slug={location.slug} />
+    {:else}
+      <Home />
+    {/if}
   </div>
-  <div class="container">
-    <div class="playlist">
-      <div class="featured-songs">
-        <h2>Featured songs</h2>
-        <p>Featured songs selected by chloemusic</p>
-      </div>
-      <ul>
-        <li>
-          <Song
-            cover="/covers/fear.png"
-            title="fear"
-            description="my last song of the year."
-            duration="03:44"
-            artist="chloemusic8008"
-            listens={0}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://on.soundcloud.com/nrgTIENC2nxv7dJVOx"
-            stars={3}
-            isNew={true}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/enemy.png"
-            title="enemy"
-            description="know thy enemy. slay those that stand in your way. i will never compromise, i promise."
-            duration="03:22"
-            artist="chloemusic8008"
-            listens={343}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://on.soundcloud.com/Y1qv4RVNFvIOEtcGG5"
-            stars={3}
-            isNew={false}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/xd.png"
-            title="XD"
-            description="fuck it, dub track. get into it bitch"
-            duration="03:45"
-            artist="chloemusic8008"
-            listens={178}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://soundcloud.com/chloemusic8008/xd?si=b4d4379ef33f4c389b3d77a90b34c2e1&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing"
-            stars={3}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/usedtobe.png"
-            title="notwhoiusedtobe"
-            description="I made this song about a girl who's probably a bitch."
-            duration="02:57"
-            artist="chloemusic8008"
-            listens={194}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://soundcloud.com/chloemusic8008/notwhoiusedtobe"
-            stars={2}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/tearyouapart_cover.png"
-            title="Tear you apart"
-            description="A song about me ripping your head off, eating your guts, your brain, your intestines, and spreading your sanguine fluid over my nudile body."
-            duration="02:23"
-            artist="chloemusic8008"
-            listens={270}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://soundcloud.com/chloemusic8008/tear-you-apart"
-            stars={3}
-          />
-        </li>
-        <li>
-          <p>...more coming soon...</p>
-        </li>
-        <li>
-          <p>
-            Need more bass? <a
-              href="https://open.spotify.com/playlist/1N3ktLy4HFlzdd5ULgyqJD?si=3feafcc9ac124751"
-              >click here</a
-            >
-          </p>
-        </li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer">
-    <p>
-      Copyright 2025 <a href="https://chlo.club/">chloemusic</a> dm me your bass
-      <a href="https://instagram.com/chloemusic8008">here</a>
-    </p>
-    <p>All rights reserved bitch</p>
-  </div>
-</main>
+  <WooferRail
+    src={railImage}
+    height={contentHeight}
+    onHeightChange={onRailHeight}
+  />
+</div>
 
 <style>
-  main {
-    display: flex;
-    flex-direction: column;
-    color: #000;
-  }
-
-  .header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  .page-shell {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, var(--layout-max)) 1fr;
+    align-items: start;
+    min-height: 100vh;
     width: 100%;
-    padding: 1rem;
   }
 
-  .title-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .header h1 {
-    font-size: 4rem;
-    font-weight: 900;
-    color: #000;
-    margin: 0;
-  }
-
-  .sound-toggle {
-    background: none;
-    border: none;
-    box-shadow: none;
-    font-family: "Arial", sans-serif;
-    font-size: 4rem;
-    font-weight: 900;
-    color: #000;
-    cursor: pointer;
-    outline: none;
-    transition: opacity 0.2s ease;
-    padding: 0;
-    margin: 0;
-  }
-
-  .sound-toggle:hover {
-    opacity: 0.7;
-  }
-
-  .sound-toggle:not(.sound-enabled) {
-    color: #666;
-  }
-
-  .download-button {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-  }
-
-  .container {
+  .page-main {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
-  .footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 1rem;
-    text-align: center;
-    flex-direction: row;
-    justify-content: space-between;
-    background-color: #f0f0f0;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+  .page-shell :global(.woofer-rail) {
+    min-width: 0;
   }
 
-  .playlist {
-    display: flex;
-    flex-direction: column;
-    align-items: left;
-    justify-content: left;
-  }
-
-  .featured-songs {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    justify-content: flex-start;
-    border-top: 1px solid #bbb;
-    border-bottom: 1px solid #bbb;
-    margin-bottom: 20px;
-  }
-
-  .featured-songs h2 {
-    margin: 0;
-    font-size: 19px;
-  }
-
-  .featured-songs p {
-    margin: 0;
-    font-size: 12px;
-  }
-
-  .playlist ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .playlist ul li {
-    padding: 8px;
-  }
-
-  .playlist ul li:not(:last-child) {
-    border-bottom: 1px dotted #bbb;
-  }
-
-  .playlist ul li:not(:first-child) {
-    border-top: 1px dotted #bbb;
-  }
-
-  h1 {
-    font-family: "Arial", sans-serif;
-    font-size: 4rem;
-    font-weight: 900;
-    color: #000;
-  }
-
-  .footer p {
-    font-family: "Arial", sans-serif;
-    font-size: 12px;
-    color: #666;
-  }
-
-  button {
-    font-family: "Arial", sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
-    border: 1px solid #d3d3d3;
-    border-radius: 3px;
-    cursor: pointer;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-    transition: all 0.1s ease;
-    position: relative;
-    outline: none;
-  }
-
-  /* Mobile styles */
-  @media (max-width: 768px) {
-    .header h1 {
-      font-size: 2.5rem;
+  @media (max-width: 1023px) {
+    .page-shell {
+      display: block;
     }
 
-    .sound-toggle {
-      font-size: 2.5rem;
-    }
-
-    .title-row {
-      flex-direction: row;
-      gap: 0.25rem;
-    }
-
-    .download-button {
-      flex-direction: column;
-      gap: 0.5rem;
-      text-align: center;
-    }
-
-    .download-button p {
-      font-size: 14px;
-      margin: 0;
-    }
-
-    .container {
-      padding: 0.5rem;
-    }
-
-    .footer {
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 0.75rem;
-    }
-
-    .footer p {
-      font-size: 11px;
-      margin: 0;
-    }
-
-    .playlist {
-      width: 100%;
-    }
-
-    .featured-songs {
-      padding: 0.5rem 0;
-    }
-
-    .featured-songs h2 {
-      font-size: 16px;
-    }
-
-    .featured-songs p {
-      font-size: 11px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .header {
-      padding: 0.5rem;
-    }
-
-    .header h1 {
-      font-size: 2rem;
-    }
-
-    .sound-toggle {
-      font-size: 2rem;
-    }
-
-    .container {
-      padding: 0.25rem;
-    }
-
-    .footer {
-      padding: 0.5rem;
+    .page-shell :global(.woofer-rail) {
+      display: none;
     }
   }
 </style>

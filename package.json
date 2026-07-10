@@ -3,12 +3,18 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "worker"
+  ],
   "scripts": {
     "dev": "vite",
+    "dev:worker": "npm run dev --workspace=worker",
+    "dev:all": "npm run dev:worker & npm run dev",
     "build": "vite build",
     "preview": "npm run build && wrangler dev",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
-    "deploy": "npm run build && wrangler deploy"
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && npm run check --workspace=worker",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:worker": "npm run deploy --workspace=worker"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.44.0",
@@ -19,5 +25,12 @@
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
     "wrangler": "^4.110.0"
+  },
+  "dependencies": {
+    "hls.js": "^1.6.16"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.50.0",
+    "@rollup/rollup-linux-x64-musl": "^4.50.0"
   }
 }

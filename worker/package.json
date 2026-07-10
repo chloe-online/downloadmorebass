@@ -1,0 +1,16 @@
+{
+  "name": "downloadmorebass-worker",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --config wrangler.toml",
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250709.0",
+    "typescript": "~5.8.3",
+    "wrangler": "^4.26.0"
+  }
+}
