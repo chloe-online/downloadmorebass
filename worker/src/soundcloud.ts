@@ -1,4 +1,9 @@
-import type { ArtistProfile, Comment, Track } from "../../shared/types";
+import type {
+  ArtistProfile,
+  Comment,
+  Track,
+  WebProfile,
+} from "../../shared/types";
 
 export interface Env {
   SOUNDCLOUD_CLIENT_ID: string;
@@ -22,6 +27,16 @@ interface SoundCloudUser {
   country: string | null;
   followers_count?: number;
   track_count?: number;
+  created_at?: string;
+  website?: string | null;
+  website_title?: string | null;
+}
+
+interface SoundCloudWebProfile {
+  service: string;
+  title: string | null;
+  url: string;
+  username: string | null;
 }
 
 interface SoundCloudTrack {
@@ -30,6 +45,8 @@ interface SoundCloudTrack {
   description: string | null;
   duration: number;
   playback_count: number;
+  favoritings_count?: number;
+  likes_count?: number;
   permalink_url: string;
   artwork_url: string | null;
   created_at: string;
@@ -175,6 +192,16 @@ function isRecentlyCreated(createdAt: string, days = 30): boolean {
   return created >= cutoff;
 }
 
+function calculateStars(likes: number, listens: number): number {
+  if (listens === 0) {
+    return 0;
+  }
+
+  // 1 like per 10 listens = 5 stars
+  const stars = Math.round((likes / listens) * 50);
+  return Math.min(5, Math.max(0, stars));
+}
+
 function formatAvatarUrl(avatarUrl: string | null): string {
   if (!avatarUrl) {
     return "";
@@ -183,7 +210,67 @@ function formatAvatarUrl(avatarUrl: string | null): string {
   return avatarUrl.replace("-large", "-t200x200");
 }
 
-function toArtistProfile(user: SoundCloudUser, trackCount: number): ArtistProfile {
+async function fetchUserWebProfiles(
+  env: Env,
+  userId: number,
+): Promise<SoundCloudWebProfile[]> {
+  return soundCloudFetch<SoundCloudWebProfile[]>(
+    env,
+    `/users/${userId}/web-profiles`,
+  );
+}
+
+function toWebProfile(profile: SoundCloudWebProfile): WebProfile {
+  return {
+    service: profile.service,
+    title: profile.title?.trim() ?? "",
+    url: profile.url,
+    username: profile.username?.trim() ?? "",
+  };
+}
+
+function isDownloadMoreBassUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return (
+      hostname === "downloadmorebass.com" ||
+      hostname.endsWith(".downloadmorebass.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function buildWebProfiles(
+  user: SoundCloudUser,
+  apiProfiles: SoundCloudWebProfile[],
+): WebProfile[] {
+  const profiles = apiProfiles
+    .map(toWebProfile)
+    .filter((profile) => !isDownloadMoreBassUrl(profile.url));
+  const website = user.website?.trim();
+
+  if (
+    website &&
+    !isDownloadMoreBassUrl(website) &&
+    !profiles.some((profile) => profile.url === website)
+  ) {
+    profiles.unshift({
+      service: "website",
+      title: user.website_title?.trim() ?? "",
+      url: website,
+      username: "",
+    });
+  }
+
+  return profiles;
+}
+
+function toArtistProfile(
+  user: SoundCloudUser,
+  trackCount: number,
+  webProfiles: WebProfile[],
+): ArtistProfile {
   return {
     username: user.username,
     permalinkUrl: user.permalink_url,
@@ -193,10 +280,15 @@ function toArtistProfile(user: SoundCloudUser, trackCount: number): ArtistProfil
     country: user.country ?? "",
     followersCount: user.followers_count ?? 0,
     trackCount,
+    createdAt: user.created_at ?? "",
+    webProfiles,
   };
 }
 
 function toTrack(track: SoundCloudTrack): Track {
+  const listens = track.playback_count;
+  const likes = track.likes_count ?? track.favoritings_count ?? 0;
+
   return {
     id: track.id,
     cover: formatArtworkUrl(track.artwork_url),
@@ -204,20 +296,31 @@ function toTrack(track: SoundCloudTrack): Track {
     description: track.description?.trim() ?? "",
     duration: formatDuration(track.duration),
     artist: track.user.username,
-    listens: track.playback_count,
+    listens,
+    likes,
     artistUrl: track.user.permalink_url,
     url: track.permalink_url,
-    stars: 3,
+    stars: calculateStars(likes, listens),
     isNew: isRecentlyCreated(track.created_at),
+    publishedAt: track.created_at,
   };
 }
 
 export async function fetchUserTracks(env: Env) {
   const user = await resolveUser(env, env.SOUNDCLOUD_USER);
-  const rawTracks = await fetchAllUserTracks(env, user.id);
+  const [rawTracks, rawWebProfiles] = await Promise.all([
+    fetchAllUserTracks(env, user.id),
+    fetchUserWebProfiles(env, user.id),
+  ]);
+
+  console.log(user);
 
   return {
-    user: toArtistProfile(user, rawTracks.length),
+    user: toArtistProfile(
+      user,
+      rawTracks.length,
+      buildWebProfiles(user, rawWebProfiles),
+    ),
     tracks: rawTracks.map(toTrack),
   };
 }
@@ -274,5 +377,69 @@ export async function fetchTrackComments(env: Env, trackId: number) {
 
   return {
     comments: rawComments.map(toComment),
+  };
+}
+
+interface TrackStreams {
+  http_mp3_128_url?: string;
+  preview_mp3_128_url?: string;
+  hls_aac_160_url?: string;
+  hls_aac_96_url?: string;
+}
+
+async function resolvePlayableUrl(
+  env: Env,
+  streamUrl: string,
+): Promise<string> {
+  const accessToken = await getAccessToken(env);
+  const response = await fetch(streamUrl, {
+    method: "HEAD",
+    headers: {
+      Authorization: `OAuth ${accessToken}`,
+    },
+    redirect: "manual",
+  });
+
+  if (response.status === 301 || response.status === 302) {
+    const location = response.headers.get("Location");
+    if (location) {
+      return location;
+    }
+  }
+
+  return streamUrl;
+}
+
+export async function fetchTrackStream(env: Env, trackId: number) {
+  const streams = await soundCloudFetch<TrackStreams>(
+    env,
+    `/tracks/${trackId}/streams`,
+  );
+
+  const candidates: Array<{ url: string; format: "mp3" | "hls" }> = [];
+
+  if (streams.http_mp3_128_url) {
+    candidates.push({ url: streams.http_mp3_128_url, format: "mp3" });
+  }
+  if (streams.preview_mp3_128_url) {
+    candidates.push({ url: streams.preview_mp3_128_url, format: "mp3" });
+  }
+  if (streams.hls_aac_160_url) {
+    candidates.push({ url: streams.hls_aac_160_url, format: "hls" });
+  }
+  if (streams.hls_aac_96_url) {
+    candidates.push({ url: streams.hls_aac_96_url, format: "hls" });
+  }
+
+  if (candidates.length === 0) {
+    throw new Error("No stream available for this track");
+  }
+
+  const chosen = candidates[0];
+  const url = await resolvePlayableUrl(env, chosen.url);
+
+  return {
+    url,
+    format: chosen.format,
   };
 }

@@ -1,3 +1,10 @@
+export interface WebProfile {
+  service: string;
+  title: string;
+  url: string;
+  username: string;
+}
+
 export interface ArtistProfile {
   username: string;
   permalinkUrl: string;
@@ -7,6 +14,8 @@ export interface ArtistProfile {
   country: string;
   followersCount: number;
   trackCount: number;
+  createdAt: string;
+  webProfiles: WebProfile[];
 }
 
 export interface Track {
@@ -17,10 +26,12 @@ export interface Track {
   duration: string;
   artist: string;
   listens: number;
+  likes: number;
   artistUrl: string;
   url: string;
   stars: number;
   isNew: boolean;
+  publishedAt: string;
 }
 
 export interface Comment {
@@ -42,4 +53,9 @@ export interface CommentsResponse {
 export interface TracksResponse {
   user: ArtistProfile;
   tracks: Track[];
+}
+
+export interface StreamResponse {
+  url: string;
+  format: "mp3" | "hls";
 }

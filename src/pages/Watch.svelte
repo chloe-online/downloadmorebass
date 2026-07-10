@@ -21,6 +21,8 @@
   let commentsLoading = $state(false);
   let error = $state<string | null>(null);
   let commentsError = $state<string | null>(null);
+  let shareCopied = $state(false);
+  let shareResetTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function goHome(event: MouseEvent) {
     event.preventDefault();
@@ -32,12 +34,39 @@
     navigate(listenPath(relatedSlug));
   }
 
+  function formatDate(iso: string): string {
+    return new Date(iso).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  async function shareTrack() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      shareCopied = true;
+
+      if (shareResetTimeout) {
+        clearTimeout(shareResetTimeout);
+      }
+
+      shareResetTimeout = setTimeout(() => {
+        shareCopied = false;
+        shareResetTimeout = null;
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy share URL:", err);
+    }
+  }
+
   $effect(() => {
     const currentSlug = slug;
     loading = true;
     error = null;
     track = undefined;
     relatedTracks = [];
+    shareCopied = false;
 
     if (!currentSlug) {
       error = "No track selected.";
@@ -116,11 +145,11 @@
   <SiteHeader />
 
   <div class="watch-page">
-    <div class="nav-row">
+    <!-- <div class="nav-row">
       <button class="yt-button" onclick={goHome}
         >« Back to featured songs</button
       >
-    </div>
+    </div> -->
 
     {#if loading}
       <WatchPageSkeleton />
@@ -131,15 +160,32 @@
       <div class="watch-layout">
         <section class="primary">
           <div class="player-shell">
-            <SoundCloudPlayer url={track.url} visual height={300} />
+            <SoundCloudPlayer
+              trackId={track.id}
+              cover={track.cover}
+              title={track.title}
+              height={300}
+            />
           </div>
 
-          <h1 class="video-title">{track.title}</h1>
+          <h1 class="video-title">
+            {track.title} -
+            <a href={track.artistUrl} target="_blank" rel="noreferrer"
+              >{track.artist}</a
+            >
+          </h1>
 
           <div class="meta-bar">
             <span class="views">{track.listens.toLocaleString()} listens</span>
             <span class="separator">|</span>
-            <span class="duration">{track.duration}</span>
+            <span class="likes">{track.likes.toLocaleString()} likes</span>
+            <span class="separator">|</span>
+            {#if track.publishedAt}
+              <span class="separator">|</span>
+              <span class="published"
+                >Added on {formatDate(track.publishedAt)}</span
+              >
+            {/if}
             <span class="separator">|</span>
             <span class="rating">
               {#each Array(5) as _, i}
@@ -148,18 +194,12 @@
             </span>
           </div>
 
-          <div class="uploader-box">
-            <span class="label">Channel:</span>
-            <a href={track.artistUrl} target="_blank" rel="noreferrer"
-              >{track.artist}</a
-            >
-            {#if track.isNew}
-              <span class="new-tag">NEW</span>
-            {/if}
-          </div>
+          <div class="uploader-box"></div>
 
           <div class="action-row">
-            <button class="yt-button">Share</button>
+            <button class="yt-button" onclick={shareTrack}>
+              {shareCopied ? "Copied!" : "Share"}
+            </button>
             <button class="yt-button">Add to</button>
             <a
               class="yt-button"
@@ -173,10 +213,16 @@
 
           <div class="description-box">
             <h2>Description</h2>
-            <ExpandableText text={track.description || "No description provided."} />
+            <ExpandableText
+              text={track.description || "No description provided."}
+            />
           </div>
 
-          <Comments {comments} loading={commentsLoading} error={commentsError} />
+          <Comments
+            {comments}
+            loading={commentsLoading}
+            error={commentsError}
+          />
         </section>
 
         <aside class="sidebar">
@@ -275,9 +321,6 @@
   }
 
   .player-shell {
-    background: #000;
-    border: 1px solid #999;
-    padding: 0;
     margin-bottom: 0.75rem;
   }
 
@@ -288,6 +331,10 @@
     margin: 0 0 0.5rem;
     line-height: 1.2;
     text-align: left;
+  }
+
+  .video-title a {
+    font-weight: semibold;
   }
 
   .meta-bar {
