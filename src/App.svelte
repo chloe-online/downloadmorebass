@@ -1,8 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Song from "./Song.svelte";
+  import { fetchTracks } from "./lib/api";
+  import type { Track } from "../shared/types";
 
   let audioContext: AudioContext | null = null;
+  let tracks: Track[] = [];
+  let artistUsername = "chloemusic8008";
+  let artistUrl = "https://soundcloud.com/chloemusic8008";
+  let tracksLoading = true;
+  let tracksError: string | null = null;
   let isPlaying = false;
   let userInteracted = false;
   let soundEnabled = false;
@@ -94,6 +101,20 @@
     } catch (error) {
       console.log("Audio context creation failed:", error);
     }
+
+    fetchTracks()
+      .then((data) => {
+        tracks = data.tracks;
+        artistUsername = data.user.username;
+        artistUrl = data.user.permalinkUrl;
+      })
+      .catch((error: unknown) => {
+        tracksError =
+          error instanceof Error ? error.message : "Failed to load tracks";
+      })
+      .finally(() => {
+        tracksLoading = false;
+      });
   });
 </script>
 
@@ -118,79 +139,39 @@
     <div class="playlist">
       <div class="featured-songs">
         <h2>Featured songs</h2>
-        <p>Featured songs selected by chloemusic</p>
+        <p>Featured songs selected by {artistUsername}</p>
       </div>
       <ul>
-        <li>
-          <Song
-            cover="/covers/fear.png"
-            title="fear"
-            description="my last song of the year."
-            duration="03:44"
-            artist="chloemusic8008"
-            listens={0}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://on.soundcloud.com/nrgTIENC2nxv7dJVOx"
-            stars={3}
-            isNew={true}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/enemy.png"
-            title="enemy"
-            description="know thy enemy. slay those that stand in your way. i will never compromise, i promise."
-            duration="03:22"
-            artist="chloemusic8008"
-            listens={343}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://on.soundcloud.com/Y1qv4RVNFvIOEtcGG5"
-            stars={3}
-            isNew={false}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/xd.png"
-            title="XD"
-            description="fuck it, dub track. get into it bitch"
-            duration="03:45"
-            artist="chloemusic8008"
-            listens={178}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://soundcloud.com/chloemusic8008/xd?si=b4d4379ef33f4c389b3d77a90b34c2e1&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing"
-            stars={3}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/usedtobe.png"
-            title="notwhoiusedtobe"
-            description="I made this song about a girl who's probably a bitch."
-            duration="02:57"
-            artist="chloemusic8008"
-            listens={194}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://soundcloud.com/chloemusic8008/notwhoiusedtobe"
-            stars={2}
-          />
-        </li>
-        <li>
-          <Song
-            cover="/covers/tearyouapart_cover.png"
-            title="Tear you apart"
-            description="A song about me ripping your head off, eating your guts, your brain, your intestines, and spreading your sanguine fluid over my nudile body."
-            duration="02:23"
-            artist="chloemusic8008"
-            listens={270}
-            artistUrl="https://soundcloud.com/chloemusic8008"
-            url="https://soundcloud.com/chloemusic8008/tear-you-apart"
-            stars={3}
-          />
-        </li>
-        <li>
-          <p>...more coming soon...</p>
-        </li>
+        {#if tracksLoading}
+          <li>
+            <p>Loading tracks...</p>
+          </li>
+        {:else if tracksError}
+          <li>
+            <p class="error">{tracksError}</p>
+          </li>
+        {:else if tracks.length === 0}
+          <li>
+            <p>No tracks found.</p>
+          </li>
+        {:else}
+          {#each tracks as track (track.url)}
+            <li>
+              <Song
+                cover={track.cover}
+                title={track.title}
+                description={track.description}
+                duration={track.duration}
+                artist={track.artist}
+                listens={track.listens}
+                artistUrl={track.artistUrl}
+                url={track.url}
+                stars={track.stars}
+                isNew={track.isNew}
+              />
+            </li>
+          {/each}
+        {/if}
         <li>
           <p>
             Need more bass? <a
@@ -322,6 +303,10 @@
   .featured-songs p {
     margin: 0;
     font-size: 12px;
+  }
+
+  .error {
+    color: #b00020;
   }
 
   .playlist ul {
