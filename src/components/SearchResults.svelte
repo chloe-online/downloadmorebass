@@ -1,6 +1,5 @@
 <script lang="ts">
   import Song from "./Song.svelte";
-  import SongSkeleton from "./SongSkeleton.svelte";
   import { homePath, navigate } from "../lib/router";
   import type { Track } from "../../shared/types";
 
@@ -9,11 +8,9 @@
   let {
     tracks,
     query,
-    loading = false,
   }: {
     tracks: Track[];
     query: string;
-    loading?: boolean;
   } = $props();
 
   let sortMode = $state<SearchSortMode>("listened");
@@ -51,9 +48,7 @@
       <div class="search-subtitle-content">
         <p class="meta">
           Results for <strong>{query}</strong>
-          {#if !loading}
-            ({results.length})
-          {/if}
+          ({results.length})
         </p>
         <p class="meta">
           <a href="/" onclick={clearSearch}>Clear search</a>
@@ -74,11 +69,7 @@
   </div>
 
   <ul>
-    {#if loading}
-      {#each Array(10) as _, i (i)}
-        <li><SongSkeleton /></li>
-      {/each}
-    {:else if results.length === 0}
+    {#if results.length === 0}
       <li class="search-empty">
         No songs matched your search.
         <a href="/" onclick={clearSearch}>Back to featured songs</a>
@@ -189,15 +180,11 @@
 
   li {
     padding-top: 8px;
-    padding-bottom: 2px;
+    padding-bottom: 8px;
   }
 
   li:not(:last-child) {
     border-bottom: 1px dotted #bbb;
-  }
-
-  li:not(:first-child) {
-    border-top: 1px dotted #bbb;
   }
 
   .search-empty {
