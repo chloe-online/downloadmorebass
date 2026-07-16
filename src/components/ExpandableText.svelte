@@ -101,7 +101,7 @@
     font-weight: bold;
     color: #03c;
     cursor: pointer;
-    text-decoration: none;
+    text-decoration: dotted underline;
   }
 
   .toggle:hover {
