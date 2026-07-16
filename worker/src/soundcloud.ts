@@ -4,12 +4,9 @@ import type {
   Track,
   WebProfile,
 } from "../../shared/types";
+import type { Env } from "./env";
 
-export interface Env {
-  SOUNDCLOUD_CLIENT_ID: string;
-  SOUNDCLOUD_CLIENT_SECRET: string;
-  SOUNDCLOUD_USER: string;
-}
+export type { Env };
 
 interface TokenResponse {
   access_token: string;
@@ -312,9 +309,6 @@ export async function fetchUserTracks(env: Env) {
     fetchAllUserTracks(env, user.id),
     fetchUserWebProfiles(env, user.id),
   ]);
-
-  console.log(user);
-
   return {
     user: toArtistProfile(
       user,

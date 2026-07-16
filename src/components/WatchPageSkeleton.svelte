@@ -1,29 +1,35 @@
-<script lang="ts">
-  import ArtistProfileBarSkeleton from "./ArtistProfileBarSkeleton.svelte";
-</script>
-
 <div class="watch-layout" aria-hidden="true">
   <section class="primary">
     <div class="skeleton player"></div>
     <div class="skeleton video-title"></div>
-    <div class="skeleton meta"></div>
-    <div class="skeleton channel"></div>
-    <div class="action-row">
-      <div class="skeleton action"></div>
-      <div class="skeleton action"></div>
-      <div class="skeleton action wide"></div>
+
+    <div class="song-info">
+      <div class="artist-row">
+        <div class="skeleton avatar"></div>
+        <div class="artist-info">
+          <div class="skeleton username"></div>
+          <div class="skeleton followers"></div>
+        </div>
+        <div class="skeleton subscribe"></div>
+      </div>
+      <div class="skeleton rating"></div>
     </div>
-    <div class="description-box">
-      <div class="skeleton box-title"></div>
+
+    <div class="track-info">
+      <div class="track-info-header">
+        <div class="skeleton meta-chip"></div>
+        <div class="skeleton meta-chip wide"></div>
+      </div>
       <div class="skeleton line"></div>
       <div class="skeleton line"></div>
       <div class="skeleton line short"></div>
     </div>
+
     <div class="comments-skeleton">
       <div class="skeleton box-title"></div>
       {#each Array(3) as _}
         <div class="comment-row">
-          <div class="skeleton avatar"></div>
+          <div class="skeleton comment-avatar"></div>
           <div class="comment-lines">
             <div class="skeleton line short"></div>
             <div class="skeleton line"></div>
@@ -34,7 +40,6 @@
   </section>
 
   <aside class="sidebar">
-    <ArtistProfileBarSkeleton />
     <div class="skeleton sidebar-title"></div>
     {#each Array(4) as _}
       <div class="related-row">
@@ -42,6 +47,7 @@
         <div class="related-lines">
           <div class="skeleton line"></div>
           <div class="skeleton line short"></div>
+          <div class="skeleton line tiny"></div>
         </div>
       </div>
     {/each}
@@ -85,35 +91,67 @@
     margin-bottom: 0.5rem;
   }
 
-  .meta {
-    height: 12px;
-    width: 55%;
-    margin-bottom: 0.75rem;
-  }
-
-  .channel {
-    height: 13px;
-    width: 40%;
-    margin-bottom: 0.75rem;
-  }
-
-  .action-row {
+  .song-info {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    min-width: 0;
+    width: 100%;
+    margin-bottom: 0.75rem;
   }
 
-  .action {
-    height: 26px;
-    width: 56px;
+  .artist-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.6rem;
+    min-width: 0;
+    flex: 1;
   }
 
-  .action.wide {
-    width: 130px;
+  .avatar {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border: 1px solid #999;
+    border-radius: 2px;
   }
 
-  .description-box {
+  .artist-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .username {
+    height: 14px;
+    width: 7rem;
+  }
+
+  .followers {
+    height: 12px;
+    width: 5.5rem;
+  }
+
+  .subscribe {
+    height: 24px;
+    width: 4.5rem;
+    flex-shrink: 0;
+    border: 1px solid #d3d3d3;
+    border-radius: 3px;
+  }
+
+  .rating {
+    height: 16px;
+    width: 5.5rem;
+    flex-shrink: 0;
+  }
+
+  .track-info {
     border: 1px solid #ccc;
     background: #f9f9f9;
     padding: 0.75rem;
@@ -123,10 +161,21 @@
     margin-bottom: 1rem;
   }
 
-  .box-title {
-    height: 13px;
-    width: 35%;
-    margin-bottom: 0.25rem;
+  .track-info-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .meta-chip {
+    height: 12px;
+    width: 5.5rem;
+  }
+
+  .meta-chip.wide {
+    width: 8rem;
   }
 
   .line {
@@ -138,12 +187,22 @@
     width: 65%;
   }
 
+  .line.tiny {
+    width: 35%;
+  }
+
   .comments-skeleton {
     border-top: 1px solid #ccc;
     padding-top: 0.75rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .box-title {
+    height: 13px;
+    width: 35%;
+    margin-bottom: 0.25rem;
   }
 
   .comment-row,
@@ -153,7 +212,7 @@
     align-items: flex-start;
   }
 
-  .avatar {
+  .comment-avatar {
     width: 36px;
     height: 36px;
     flex-shrink: 0;
@@ -176,9 +235,9 @@
 
   .thumb {
     width: 80px;
-    height: 60px;
+    height: 80px;
     flex-shrink: 0;
-    border: 1px solid #ccc;
+    border: 1px solid #999;
   }
 
   @media (max-width: 768px) {

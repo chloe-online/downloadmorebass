@@ -1,2 +1,5 @@
 SOUNDCLOUD_CLIENT_ID=your_client_id
 SOUNDCLOUD_CLIENT_SECRET=your_client_secret
+ADMIN_SECRET=generate_a_long_random_string
+RESEND_API_KEY=re_xxxxxxxxxxxx
+TURNSTILE_SECRET_KEY=0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

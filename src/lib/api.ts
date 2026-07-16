@@ -1,7 +1,9 @@
 import type {
   CommentsResponse,
   StreamResponse,
+  SubscribeResponse,
   TracksResponse,
+  UnsubscribeResponse,
 } from "../../shared/types";
 
 const apiBase = import.meta.env.VITE_API_URL ?? "";
@@ -56,4 +58,28 @@ export async function fetchComments(trackId: number): Promise<CommentsResponse> 
 export async function fetchStreamUrl(trackId: number): Promise<StreamResponse> {
   const response = await fetch(`${apiBase}/api/tracks/${trackId}/stream`);
   return parseResponse(response, "Failed to load stream");
+}
+
+export async function subscribeEmail(
+  email: string,
+  turnstileToken: string,
+  website = "",
+): Promise<SubscribeResponse> {
+  const response = await fetch(`${apiBase}/api/subscribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, turnstileToken, website }),
+  });
+  return parseResponse(response, "Failed to subscribe");
+}
+
+export async function unsubscribeEmail(
+  token: string,
+): Promise<UnsubscribeResponse> {
+  const response = await fetch(`${apiBase}/api/unsubscribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  return parseResponse(response, "Failed to unsubscribe");
 }

@@ -4,6 +4,7 @@
   import SongSkeleton from "../components/SongSkeleton.svelte";
   import SearchResults from "../components/SearchResults.svelte";
   import SiteMainBar from "../components/SiteMainBar.svelte";
+  import SubscribeSection from "../components/SubscribeSection.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import { getTracks } from "../lib/tracks";
@@ -282,6 +283,7 @@
 
       <aside class="site-sidebar">
         <SiteMainBar />
+        <SubscribeSection />
       </aside>
     </div>
   </div>
@@ -328,6 +330,8 @@
     min-width: 0;
     width: 100%;
     display: flex;
+    flex-direction: column;
+    gap: 1rem;
     /* position: sticky; */
     top: 1rem;
   }

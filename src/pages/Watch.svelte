@@ -1,8 +1,8 @@
 <script lang="ts">
   import SoundCloudPlayer from "../components/SoundCloudPlayer.svelte";
   import Comments from "../components/Comments.svelte";
-  import ArtistProfileBar from "../components/ArtistProfileBar.svelte";
   import ExpandableText from "../components/ExpandableText.svelte";
+  import SubscribeForm from "../components/SubscribeForm.svelte";
   import WatchPageSkeleton from "../components/WatchPageSkeleton.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
@@ -11,6 +11,7 @@
   import { navigate, listenPath, homePath } from "../lib/router";
   import { findTrackBySlug, getTracks, trackSlug } from "../lib/tracks";
   import { playBassTone } from "../lib/bass";
+  import { formatFullDate, formatRelativeDate } from "../lib/dates";
   import type { ArtistProfile, Comment, Track } from "../../shared/types";
 
   let { slug }: { slug: string | null } = $props();
@@ -23,17 +24,38 @@
   let commentsLoading = $state(false);
   let error = $state<string | null>(null);
   let commentsError = $state<string | null>(null);
-  let shareCopied = $state(false);
-  let shareResetTimeout: ReturnType<typeof setTimeout> | null = null;
   let moreBassExpanded = $state(false);
+  let subscribeOpen = $state(false);
+  let trackInfoExpanded = $state(false);
 
   $effect(() => {
     slug;
     moreBassExpanded = false;
+    subscribeOpen = false;
+    trackInfoExpanded = false;
   });
 
   function toggleMoreBass() {
     moreBassExpanded = !moreBassExpanded;
+  }
+
+  function openSubscribe() {
+    subscribeOpen = true;
+  }
+
+  function closeSubscribe() {
+    subscribeOpen = false;
+  }
+
+  function toggleTrackInfo() {
+    trackInfoExpanded = !trackInfoExpanded;
+  }
+
+  function handleTrackInfoKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleTrackInfo();
+    }
   }
 
   function goHome(event: MouseEvent) {
@@ -46,32 +68,6 @@
     navigate(listenPath(relatedSlug));
   }
 
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  }
-
-  async function shareTrack() {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      shareCopied = true;
-
-      if (shareResetTimeout) {
-        clearTimeout(shareResetTimeout);
-      }
-
-      shareResetTimeout = setTimeout(() => {
-        shareCopied = false;
-        shareResetTimeout = null;
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to copy share URL:", err);
-    }
-  }
-
   $effect(() => {
     const currentSlug = slug;
     window.scrollTo({ top: 0 });
@@ -79,7 +75,6 @@
     error = null;
     track = undefined;
     relatedTracks = [];
-    shareCopied = false;
 
     if (!currentSlug) {
       error = "No track selected.";
@@ -177,36 +172,137 @@
 
           <h1 class="video-title">
             <span class="title-text">
-              {track.title} -
-              <a href={track.artistUrl} target="_blank" rel="noreferrer"
-                >{track.artist}</a
-              >
+              {track.title}
             </span>
-            <span class="views">{track.listens.toLocaleString()} listens</span>
           </h1>
 
-          <div class="meta-bar">
-            <span class="rating">
-              {#each Array(5) as _, i}
-                <span class:filled={i < track.stars}>★</span>
-              {/each}
-            </span>
-            <span class="separator">|</span>
-            <span class="likes">{track.likes.toLocaleString()} likes</span>
-            {#if track.publishedAt}
-              <span class="separator">|</span>
-              <span class="published"
-                >Released on {formatDate(track.publishedAt)}</span
-              >
-            {/if}
+          <div class="song-info">
+            <div class="uploader-box">
+              {#if artistProfile}
+                <div class="artist-row">
+                  {#if artistProfile.avatarUrl}
+                    <a
+                      class="artist-avatar-link"
+                      href={artistProfile.permalinkUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <img
+                        class="artist-avatar"
+                        src={artistProfile.avatarUrl}
+                        alt={artistProfile.username}
+                      />
+                    </a>
+                  {:else}
+                    <span class="artist-avatar-fallback"
+                      >{artistProfile.username.slice(0, 1).toUpperCase()}</span
+                    >
+                  {/if}
+
+                  <div class="artist-info">
+                    <a
+                      href={artistProfile.permalinkUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span class="username">{artistProfile.username}</span>
+                    </a>
+                    <span class="followers">
+                      Followers: {artistProfile.followersCount.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div class="subscribe-wrap">
+                    <button
+                      type="button"
+                      class="subscribe-button"
+                      onclick={openSubscribe}
+                    >
+                      Subscribe
+                    </button>
+
+                    {#if subscribeOpen}
+                      <!-- svelte-ignore a11y_no_static_element_interactions -->
+                      <div
+                        class="subscribe-backdrop"
+                        onclick={closeSubscribe}
+                      ></div>
+                      <div
+                        class="subscribe-panel"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="watch-subscribe-title"
+                      >
+                        <div class="subscribe-panel-header">
+                          <h2
+                            id="watch-subscribe-title"
+                            class="subscribe-panel-title"
+                          >
+                            Subscribe
+                          </h2>
+                          <button
+                            type="button"
+                            class="subscribe-close"
+                            aria-label="Close subscribe popup"
+                            onclick={closeSubscribe}
+                          >
+                            [x]
+                          </button>
+                        </div>
+                        <SubscribeForm
+                          inputId="watch-subscribe-email"
+                          variant="popup"
+                          description={`enter your email to keep up with ${artistProfile.username}`}
+                        />
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <div class="rating-wrap">
+              <span class="rating">
+                {#each Array(5) as _, i}
+                  <span class:filled={i < track.stars}>★</span>
+                {/each}
+              </span>
+              <!-- removing the likes label for now -->
+              <!-- <span class="rating-label"
+                >Likes: {track.likes.toLocaleString()}</span
+              > -->
+            </div>
           </div>
 
-          <div class="uploader-box"></div>
-
-          <ExpandableText
-            text={track.description || "No description provided."}
-            lines={3}
-          />
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <div
+            class="track-info"
+            class:expanded={trackInfoExpanded}
+            role="button"
+            tabindex="0"
+            aria-expanded={trackInfoExpanded}
+            onclick={toggleTrackInfo}
+            onkeydown={handleTrackInfoKeydown}
+          >
+            <div class="track-info-header">
+              <span class="views">{track.listens.toLocaleString()} listens</span>
+              {#if track.publishedAt}
+                <span class="published">
+                  {#if trackInfoExpanded}
+                    Released on {formatFullDate(track.publishedAt)}
+                  {:else}
+                    {formatRelativeDate(track.publishedAt)}
+                  {/if}
+                </span>
+              {/if}
+            </div>
+            <ExpandableText
+              text={track.description || "No description provided."}
+              lines={3}
+              expanded={trackInfoExpanded}
+              onToggle={toggleTrackInfo}
+            />
+          </div>
 
           <Comments
             {comments}
@@ -217,9 +313,6 @@
         </section>
 
         <aside class="sidebar">
-          {#if artistProfile}
-            <ArtistProfileBar profile={artistProfile} />
-          {/if}
           <div class="more-bass" class:expanded={moreBassExpanded}>
             <button
               type="button"
@@ -246,7 +339,8 @@
                       <div class="related-info">
                         <span class="related-title">{related.title}</span>
                         <span class="related-meta"
-                          >{related.artist} · {related.listens.toLocaleString()} listens</span
+                          >{related.artist} · {related.listens.toLocaleString()}
+                          listens</span
                         >
                         <span class="related-duration">{related.duration}</span>
                       </div>
@@ -312,6 +406,48 @@
     padding: 1rem;
   }
 
+  .track-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    min-width: 0;
+    margin-top: 0.5rem;
+    background: #ddd;
+    border: 1px solid #999;
+    padding: 0.5rem;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .track-info:focus-visible {
+    outline: 2px solid #03c;
+    outline-offset: 1px;
+  }
+
+  .track-info-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .views {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .published {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
   .status {
     font-family: Arial, sans-serif;
     font-size: 14px;
@@ -358,6 +494,16 @@
     margin-bottom: 0.75rem;
   }
 
+  .song-info {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+    width: 100%;
+  }
+
   .video-title {
     display: flex;
     justify-content: space-between;
@@ -385,6 +531,48 @@
     font-weight: semibold;
   }
 
+  .subscribe-wrap {
+    position: relative;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+
+  .artist-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.6rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .artist-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .artist-info a {
+    text-decoration: none;
+    line-height: 1;
+  }
+
+  .username {
+    display: block;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #03c;
+    line-height: 1;
+  }
+
+  .artist-info a:hover .username {
+    text-decoration: underline;
+  }
+
   .meta-bar {
     display: flex;
     flex-wrap: wrap;
@@ -403,34 +591,168 @@
   }
 
   .rating {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0;
+    margin: 0;
+    padding: 0;
     color: #ccc;
-    letter-spacing: 1px;
-    /* font-size: 24px; */
+    letter-spacing: 0;
+    font-size: 24px;
+    line-height: 0.7;
+    height: 0.7em;
+    overflow: hidden;
+  }
+
+  .rating span {
+    display: block;
+    margin: 0;
+    padding: 0;
+    line-height: 0.7;
+    height: 0.7em;
+    overflow: hidden;
   }
 
   .rating .filled {
     color: #c00;
   }
 
+  .rating-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    line-height: 1;
+  }
+
+  .rating-label {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+  }
+
   .uploader-box {
     font-family: Arial, sans-serif;
     font-size: 13px;
-    margin-bottom: 0.75rem;
+    margin: 0;
+    padding: 0;
   }
 
-  .uploader-box .label {
-    color: #666;
-    margin-right: 0.25rem;
+  .artist-avatar-link {
+    display: block;
+    flex-shrink: 0;
+    line-height: 0;
   }
 
-  .uploader-box a {
-    color: #03c;
+  .artist-avatar,
+  .artist-avatar-fallback {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #999;
+    border-radius: 2px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .artist-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ddd;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
     font-weight: bold;
-    text-decoration: none;
+    color: #333;
   }
 
-  .uploader-box a:hover {
+  .followers {
+    min-width: 0;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.2;
+    color: #666;
+  }
+
+  .subscribe-button {
+    display: inline-block;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    font-weight: bold;
+    color: #333;
+    background: transparent
+      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
+      no-repeat scroll 0 -137px;
+    border: 1px solid #d3d3d3;
+    border-radius: 3px;
+    padding: 4px 10px;
+    text-decoration: none;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+  }
+
+  .subscribe-button:hover {
+    border-color: #999;
+  }
+
+  .subscribe-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+  }
+
+  .subscribe-panel {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    right: auto;
+    z-index: 50;
+    width: min(16.5rem, calc(100vw - 2rem));
+    box-sizing: border-box;
+    border: 1px solid #999;
+    border-radius: 2px;
+    padding: 0.65rem;
+    background: #ffffe1;
+    box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
+  }
+
+  .subscribe-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .subscribe-panel-title {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .subscribe-close {
+    border: none;
+    background: transparent;
+    color: #03c;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
     text-decoration: underline;
+  }
+
+  .subscribe-close:hover {
+    text-decoration: none;
   }
 
   .new-tag {

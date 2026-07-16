@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import Home from "./pages/Home.svelte";
   import Watch from "./pages/Watch.svelte";
+  import Unsubscribe from "./pages/Unsubscribe.svelte";
   import WooferRail from "./components/WooferRail.svelte";
   import { getLocation, initRouter, subscribe } from "./lib/router";
   import type { Location } from "./lib/router";
@@ -153,6 +154,8 @@
   <div class="page-main" bind:this={mainEl} style:min-height={pageMinHeight}>
     {#if location.route === "listen"}
       <Watch slug={location.slug} />
+    {:else if location.route === "unsubscribe"}
+      <Unsubscribe token={location.token} />
     {:else}
       <Home />
     {/if}
