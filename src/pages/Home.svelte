@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
   import Song from "../components/Song.svelte";
   import SongSkeleton from "../components/SongSkeleton.svelte";
-  import ArtistProfileBarSkeleton from "../components/ArtistProfileBarSkeleton.svelte";
   import SiteMainBar from "../components/SiteMainBar.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";

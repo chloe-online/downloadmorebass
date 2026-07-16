@@ -44,28 +44,32 @@
   </a>
 
   <div class="song-info">
-    <a class="title-link" href={listenPath(slug)} onclick={openTrack}>
-      <h2 class="song-title">
-        {title}
-      </h2>
-    </a>
-    <ExpandableText text={description} />
+    <div class="song-info-content">
+      <a class="title-link" href={listenPath(slug)} onclick={openTrack}>
+        <h2 class="song-title">
+          {title}
+        </h2>
+      </a>
+      <ExpandableText text={description} />
+    </div>
+    <p class="time">
+      <span class="header">Time:</span> <b>{duration}</b>
+    </p>
   </div>
 
-  <div class="artist-details">
+  <div class="song-details">
     <p>
-      From: <a href={artistUrl} target="_blank" rel="noreferrer">{artist}</a>
-    </p>
-    <p>
-      Listens: {listens}
+      <span class="header">From:</span>
+      <a href={artistUrl} target="_blank" rel="noreferrer">{artist}</a>
+      <span class="header">Listens:</span>
+      {listens}
       {#if listens == 69}<invisible>nice</invisible>{/if}
+      <span class="stars">
+        {#each Array(5) as _, i}
+          <span style="color: {i < stars ? 'currentColor' : '#ccc'}">★</span>
+        {/each}
+      </span>
     </p>
-    <div class="stars">
-      {#each Array(5) as _, i}
-        <span style="color: {i < stars ? 'currentColor' : '#ccc'}">★</span>
-      {/each}
-    </div>
-    <p><b>{duration}</b></p>
   </div>
 </article>
 
@@ -73,8 +77,8 @@
   .song-card {
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 8px;
   }
 
   .cover {
@@ -109,6 +113,25 @@
     align-items: start;
     flex: 1;
     min-width: 0;
+    gap: 0px;
+  }
+
+  .song-info-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0px;
+    width: 100%;
+  }
+
+  .header {
+    color: grey;
+  }
+
+  .time {
+    margin-top: auto;
+    margin-bottom: 0px;
   }
 
   .title-link {
@@ -125,12 +148,11 @@
 
   h2 {
     font-size: 14px;
-    margin: 5px;
+    margin: 0;
   }
 
   p {
     font-size: 12px;
-    margin: 5px;
     text-align: left;
   }
 
@@ -142,25 +164,25 @@
     color: #000;
   }
 
-  .artist-details {
+  .song-details {
     display: flex;
     flex-direction: column;
-    align-items: start;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 120px;
+    height: 100%;
     margin-left: 5px;
     padding-left: 5px;
-    border-left: 1px solid #bbb;
-    flex-shrink: 0;
-    width: 120px;
+  }
+  .song-details p {
+    margin: 0px;
+    padding: 0px;
   }
 
-  .artist-details p {
-    margin: 5px;
-    padding: 0;
-    line-height: 14px;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .stars {
+    color: red;
+    font-size: 18px;
+    line-height: 16px;
   }
 
   img {
@@ -169,10 +191,5 @@
     object-fit: cover;
     border-radius: 1px;
     border: 1px solid #000;
-  }
-
-  .stars {
-    color: red;
-    margin: 5px;
   }
 </style>
