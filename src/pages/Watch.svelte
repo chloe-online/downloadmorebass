@@ -8,7 +8,7 @@
   import SiteFooter from "../components/SiteFooter.svelte";
   import Song from "../components/Song.svelte";
   import { fetchComments } from "../lib/api";
-  import { navigate, listenPath } from "../lib/router";
+  import { navigate, listenPath, homePath } from "../lib/router";
   import { findTrackBySlug, getTracks, trackSlug } from "../lib/tracks";
   import { playBassTone } from "../lib/bass";
   import type { ArtistProfile, Comment, Track } from "../../shared/types";
@@ -38,7 +38,7 @@
 
   function goHome(event: MouseEvent) {
     event.preventDefault();
-    navigate("/");
+    navigate(homePath());
   }
 
   function openTrack(event: MouseEvent, relatedSlug: string) {
@@ -310,10 +310,6 @@
     flex: 1 0 auto;
     box-sizing: border-box;
     padding: 1rem;
-  }
-
-  .nav-row {
-    margin-bottom: 8px;
   }
 
   .status {

@@ -2,16 +2,23 @@
   import { onMount } from "svelte";
   import Song from "../components/Song.svelte";
   import SongSkeleton from "../components/SongSkeleton.svelte";
+  import SearchResults from "../components/SearchResults.svelte";
   import SiteMainBar from "../components/SiteMainBar.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import { getTracks } from "../lib/tracks";
+  import {
+    getLocation,
+    subscribe,
+    type Location,
+  } from "../lib/router";
   import type { ArtistProfile, Track } from "../../shared/types";
 
   type SortMode = "featured" | "popular" | "listened";
 
   const ERROR_REVEAL_DELAY_MS = 400;
 
+  let location = $state<Location>(getLocation());
   let tracks: Track[] = $state<Track[]>([]);
   let artistProfile = $state<ArtistProfile | undefined>();
   let artistUsername = $state<string>("");
@@ -41,6 +48,8 @@
     }, ERROR_REVEAL_DELAY_MS);
   }
 
+  const searchQuery = $derived(location.q);
+
   const sortedTracks = $derived(
     [...tracks].sort((a, b) => {
       if (sortMode === "popular") {
@@ -49,7 +58,6 @@
       if (sortMode === "listened") {
         return b.listens - a.listens;
       }
-      // featured: newest first
       return (
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
       );
@@ -133,6 +141,10 @@
   }
 
   onMount(() => {
+    const unsubscribe = subscribe((next) => {
+      location = next;
+    });
+
     try {
       audioContext = new AudioContext();
       createBassTone();
@@ -143,6 +155,7 @@
     loadTracks();
 
     return () => {
+      unsubscribe();
       clearErrorReveal();
     };
   });
@@ -179,6 +192,12 @@
               </p>
             </div>
           </div>
+        {:else if searchQuery}
+          <SearchResults
+            tracks={tracks}
+            query={searchQuery}
+            loading={tracksLoading}
+          />
         {:else}
           <div class="playlist">
             <div class="featured-songs">

@@ -3,6 +3,7 @@ export type Route = "home" | "listen";
 export interface Location {
   route: Route;
   slug: string | null;
+  q: string | null;
 }
 
 type Listener = (location: Location) => void;
@@ -15,15 +16,25 @@ function normalizeSlug(slug: string): string {
   }
 }
 
+function parseQuery(raw: string | null): string | null {
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : null;
+}
+
 function parseLocation(): Location {
   const { pathname, search } = window.location;
+  const params = new URLSearchParams(search);
 
   if (pathname === "/listen" || pathname === "/watch") {
-    const slug = new URLSearchParams(search).get("v");
-    return { route: "listen", slug: slug ? normalizeSlug(slug) : null };
+    const slug = params.get("v");
+    return {
+      route: "listen",
+      slug: slug ? normalizeSlug(slug) : null,
+      q: null,
+    };
   }
 
-  return { route: "home", slug: null };
+  return { route: "home", slug: null, q: parseQuery(params.get("q")) };
 }
 
 let current = parseLocation();
@@ -61,4 +72,12 @@ export function initRouter(): () => void {
 
 export function listenPath(slug: string): string {
   return `/listen?v=${encodeURIComponent(slug)}`;
+}
+
+export function homePath(q?: string | null): string {
+  const query = parseQuery(q ?? null);
+  if (!query) {
+    return "/";
+  }
+  return `/?q=${encodeURIComponent(query)}`;
 }

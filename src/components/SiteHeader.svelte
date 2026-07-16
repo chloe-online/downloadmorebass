@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { navigate } from "../lib/router";
+  import { navigate, homePath } from "../lib/router";
   import { isPlayerAudible, playerPlayback } from "../lib/playback.svelte";
   import { playBassTone } from "../lib/bass";
+  import SiteNavBar from "./SiteNavBar.svelte";
 
   let {
     showSoundToggle = false,
@@ -15,7 +16,7 @@
 
   function goHome(event: MouseEvent) {
     event.preventDefault();
-    navigate("/");
+    navigate(homePath());
   }
 
   const wooferSrc = $derived(
@@ -72,6 +73,7 @@
       </button>
     {/if}
   </div>
+  <SiteNavBar />
 </header>
 
 <style>
