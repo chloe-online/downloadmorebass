@@ -22,9 +22,7 @@ export function getArtistProfile() {
 
 export function findTrackBySlug(slug: string): Track | undefined {
   const normalized = normalizeSlug(slug);
-  return cache?.tracks.find(
-    (track) => trackSlug(track.url) === normalized,
-  );
+  return cache?.tracks.find((track) => trackSlug(track.url) === normalized);
 }
 
 function normalizeSlug(slug: string): string {
