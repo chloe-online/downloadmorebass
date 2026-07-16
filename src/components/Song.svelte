@@ -63,7 +63,6 @@
       <a href={artistUrl} target="_blank" rel="noreferrer">{artist}</a>
       <span class="header">Listens:</span>
       {listens}
-      {#if listens == 69}<invisible>nice</invisible>{/if}
       <span class="stars">
         {#each Array(5) as _, i}
           <span style="color: {i < stars ? 'currentColor' : '#ccc'}">★</span>
@@ -131,7 +130,7 @@
 
   .time {
     margin-top: auto;
-    margin-bottom: 0px;
+    margin-bottom: 2px;
   }
 
   .title-link {
@@ -154,14 +153,6 @@
   p {
     font-size: 12px;
     text-align: left;
-  }
-
-  p invisible {
-    color: #fff;
-  }
-
-  p invisible:hover {
-    color: #000;
   }
 
   .song-details {

@@ -342,7 +342,8 @@
   }
 
   .playlist ul li {
-    padding: 8px;
+    padding-top: 8px;
+    padding-bottom: 2px; /* accounts for 2px border-bottom on song element  this shoulddddd be fixed but mehhhh */
   }
 
   .playlist ul li:not(:last-child) {
