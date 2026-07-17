@@ -7,6 +7,7 @@
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import Song from "../components/Song.svelte";
+  import StarsRating from "../components/StarsRating.svelte";
   import ErrorPanel from "../components/ErrorPanel.svelte";
   import { fetchComments } from "../lib/api";
   import { navigate, listenPath, homePath } from "../lib/router";
@@ -275,15 +276,7 @@
             </div>
 
             <div class="rating-wrap">
-              <span class="rating">
-                {#each Array(5) as _, i}
-                  <span class:filled={i < track.stars}>★</span>
-                {/each}
-              </span>
-              <!-- removing the likes label for now -->
-              <!-- <span class="rating-label"
-                >Likes: {track.likes.toLocaleString()}</span
-              > -->
+              <StarsRating stars={track.stars} likes={track.likes} size="large" />
             </div>
           </div>
 
@@ -435,6 +428,7 @@
                         artistUrl={related.artistUrl}
                         url={related.url}
                         stars={related.stars}
+                        likes={related.likes}
                         genre={related.genre}
                         isNew={related.isNew}
                       />
@@ -496,6 +490,7 @@
                         artistUrl={related.artistUrl}
                         url={related.url}
                         stars={related.stars}
+                        likes={related.likes}
                         genre={related.genre}
                         isNew={related.isNew}
                       />
@@ -786,33 +781,6 @@
     color: #ccc;
   }
 
-  .rating {
-    display: inline-flex;
-    align-items: flex-start;
-    gap: 0;
-    margin: 0;
-    padding: 0;
-    color: #ccc;
-    letter-spacing: 0;
-    font-size: 24px;
-    line-height: 0.7;
-    height: auto;
-    overflow: visible;
-  }
-
-  .rating span {
-    display: block;
-    margin: 0;
-    padding: 0;
-    line-height: 0.7;
-    height: auto;
-    overflow: visible;
-  }
-
-  .rating .filled {
-    color: #c00;
-  }
-
   .rating-wrap {
     display: flex;
     flex-direction: column;
@@ -822,14 +790,6 @@
     padding: 0;
     min-width: 0;
     line-height: 1;
-  }
-
-  .rating-label {
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
   }
 
   .uploader-box {

@@ -2,6 +2,7 @@
   import { navigate, listenPath, homePath } from "../lib/router";
   import { trackSlug } from "../lib/tracks";
   import ExpandableText from "./ExpandableText.svelte";
+  import StarsRating from "./StarsRating.svelte";
 
   let {
     cover,
@@ -12,6 +13,7 @@
     url,
     duration,
     stars,
+    likes,
     listens,
     genre = "",
     isNew = false,
@@ -24,6 +26,7 @@
     url: string;
     duration: string;
     stars: number;
+    likes: number;
     listens: number;
     genre?: string;
     isNew?: boolean;
@@ -73,11 +76,7 @@
       <a href={artistUrl} target="_blank" rel="noreferrer">{artist}</a>
       <span class="header">Listens:</span>
       {listens}
-      <span class="stars">
-        {#each Array(5) as _, i}
-          <span style="color: {i < stars ? 'currentColor' : '#ccc'}">★</span>
-        {/each}
-      </span>
+      <StarsRating {stars} {likes} />
     </p>
     {#if genreLabel}
       <p class="genre">
@@ -205,14 +204,6 @@
 
   .genre-link:hover {
     text-decoration: underline;
-  }
-
-  .stars {
-    color: red;
-    font-size: 18px;
-    line-height: 1;
-    overflow: visible;
-    vertical-align: text-bottom;
   }
 
   img {
