@@ -240,6 +240,7 @@
                       artistUrl={track.artistUrl}
                       url={track.url}
                       stars={track.stars}
+                      genre={track.genre}
                       isNew={track.isNew}
                     />
                   </li>

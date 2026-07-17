@@ -320,29 +320,37 @@
               onToggle={toggleTrackInfo}
             />
             {#if trackInfoExpanded && (track.genre || track.tags.length > 0)}
-              <div class="track-tags">
+              <div class="track-meta">
                 {#if track.genre}
-                  <a
-                    class="track-tag track-tag--genre"
-                    href={homePath(track.genre)}
-                    onclick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      navigate(homePath(track?.genre ?? "all"));
-                    }}>{track.genre}</a
-                  >
+                  <p class="track-meta-row">
+                    <span class="track-meta-label">Genre:</span>
+                    <a
+                      class="track-tag track-tag--genre"
+                      href={homePath(track.genre)}
+                      onclick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        navigate(homePath(track?.genre ?? "all"));
+                      }}>{track.genre}</a
+                    >
+                  </p>
                 {/if}
-                {#each track.tags as tag (tag)}
-                  <a
-                    class="track-tag"
-                    href={homePath(tag)}
-                    onclick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      navigate(homePath(tag));
-                    }}>{tag}</a
-                  >
-                {/each}
+                {#if track.tags.length > 0}
+                  <div class="track-meta-row">
+                    <span class="track-meta-label">Tags:</span>
+                    {#each track.tags as tag (tag)}
+                      <a
+                        class="track-tag"
+                        href={homePath(tag)}
+                        onclick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          navigate(homePath(tag));
+                        }}>{tag}</a
+                      >
+                    {/each}
+                  </div>
+                {/if}
               </div>
             {/if}
             <p class="track-info-toggle-line">
@@ -418,6 +426,7 @@
                         artistUrl={related.artistUrl}
                         url={related.url}
                         stars={related.stars}
+                        genre={related.genre}
                         isNew={related.isNew}
                       />
                     </li>
@@ -478,6 +487,7 @@
                         artistUrl={related.artistUrl}
                         url={related.url}
                         stars={related.stars}
+                        genre={related.genre}
                         isNew={related.isNew}
                       />
                     </li>
@@ -584,11 +594,27 @@
     white-space: nowrap;
   }
 
-  .track-tags {
+  .track-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .track-meta-row {
     display: flex;
     flex-wrap: wrap;
+    align-items: baseline;
     gap: 0.35rem 0.5rem;
+    margin: 0;
     min-width: 0;
+  }
+
+  .track-meta-label {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.25;
   }
 
   .track-tag {
