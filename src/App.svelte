@@ -143,7 +143,21 @@
   const pageMinHeight = $derived(
     railHeight > 0 ? `max(100vh, ${railHeight}px)` : "100vh",
   );
+
+  /** Images (and links/buttons wrapping them) are draggable by default — block that. */
+  function preventMediaDrag(event: DragEvent) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (
+      target instanceof HTMLImageElement ||
+      target.closest("a, button")?.querySelector("img")
+    ) {
+      event.preventDefault();
+    }
+  }
 </script>
+
+<svelte:window ondragstart={preventMediaDrag} />
 
 <div class="page-shell">
   <WooferRail

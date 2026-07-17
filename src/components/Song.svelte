@@ -49,8 +49,13 @@
 </script>
 
 <article class="song-card">
-  <a class="cover" href={listenPath(slug)} onclick={openTrack}>
-    <img src={cover} alt={title} />
+  <a
+    class="cover"
+    href={listenPath(slug)}
+    onclick={openTrack}
+    draggable="false"
+  >
+    <img src={cover} alt={title} draggable="false" />
     {#if isNew}
       <span class="new-badge">NEW</span>
     {/if}
@@ -212,5 +217,7 @@
     object-fit: cover;
     border-radius: 1px;
     border: 1px solid #000;
+    -webkit-user-drag: none;
+    user-select: none;
   }
 </style>

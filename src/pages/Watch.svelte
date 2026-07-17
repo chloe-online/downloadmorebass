@@ -241,11 +241,13 @@
                       href={artistProfile.permalinkUrl}
                       target="_blank"
                       rel="noreferrer"
+                      draggable="false"
                     >
                       <img
                         class="artist-avatar"
                         src={artistProfile.avatarUrl}
                         alt={artistProfile.username}
+                        draggable="false"
                       />
                     </a>
                   {:else}
@@ -399,8 +401,13 @@
                         class="related-item"
                         href={listenPath(relatedSlug)}
                         onclick={(event) => openTrack(event, relatedSlug)}
+                        draggable="false"
                       >
-                        <img src={related.cover} alt={related.title} />
+                        <img
+                          src={related.cover}
+                          alt={related.title}
+                          draggable="false"
+                        />
                         <div class="related-info">
                           <span class="related-title">{related.title}</span>
                           <span class="related-meta"
@@ -461,8 +468,13 @@
                         class="related-item"
                         href={listenPath(relatedSlug)}
                         onclick={(event) => openTrack(event, relatedSlug)}
+                        draggable="false"
                       >
-                        <img src={related.cover} alt={related.title} />
+                        <img
+                          src={related.cover}
+                          alt={related.title}
+                          draggable="false"
+                        />
                         <div class="related-info">
                           <span class="related-title">{related.title}</span>
                           <span class="related-meta"
@@ -509,7 +521,7 @@
               aria-label="Play bass tone"
               onclick={() => playBassTone(55.0, 0.5)}
             >
-              <img src={wooferSrc} alt="" class="woofer" />
+              <img src={wooferSrc} alt="" class="woofer" draggable="false" />
             </button>
           {/each}
         </div>
@@ -815,6 +827,11 @@
     flex-shrink: 0;
   }
 
+  .artist-avatar {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+
   .artist-avatar-fallback {
     display: flex;
     align-items: center;
@@ -944,6 +961,8 @@
     object-fit: cover;
     border: 1px solid #999;
     flex-shrink: 0;
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   .related-info {
@@ -1001,6 +1020,8 @@
     object-position: center;
     display: block;
     transition: transform 0.08s ease-out;
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   @media (max-width: 768px) {

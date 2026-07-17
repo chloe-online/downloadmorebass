@@ -59,6 +59,7 @@
           href={artist.permalinkUrl}
           target="_blank"
           rel="noreferrer"
+          draggable="false"
         >
           <img
             class="avatar"
@@ -66,6 +67,7 @@
             alt={artist.username}
             width="72"
             height="72"
+            draggable="false"
           />
         </a>
       {:else}
@@ -180,6 +182,11 @@
     border-radius: 2px;
     object-fit: cover;
     flex-shrink: 0;
+  }
+
+  .avatar {
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   .avatar-fallback {

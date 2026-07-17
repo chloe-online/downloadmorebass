@@ -85,7 +85,7 @@
       aria-label="Play bass tone"
       onclick={() => playBassTone(30.0, 1)}
     >
-      <img {src} alt="" class="woofer" />
+      <img {src} alt="" class="woofer" draggable="false" />
     </button>
   {/each}
 </div>
@@ -127,6 +127,8 @@
     height: 100%;
     object-fit: contain;
     object-position: center;
+    -webkit-user-drag: none;
+    user-select: none;
     transition: transform 0.08s ease-out;
   }
 </style>

@@ -34,7 +34,7 @@
       aria-label="Play bass tone"
       onclick={() => playBassTone(55.0)}
     >
-      <img src={wooferSrc} alt="" class="woofer" />
+      <img src={wooferSrc} alt="" class="woofer" draggable="false" />
     </button>
     <button
       type="button"
@@ -42,10 +42,15 @@
       aria-label="Play bass tone"
       onclick={() => playBassTone(55.0)}
     >
-      <img src={wooferSrc} alt="" class="woofer" />
+      <img src={wooferSrc} alt="" class="woofer" draggable="false" />
     </button>
     <button class="logo-button" onclick={goHome} aria-label="Go to home">
-      <img src="/logo.jpg" alt="DownloadMoreBass.com" class="logo" />
+      <img
+        src="/logo.jpg"
+        alt="DownloadMoreBass.com"
+        class="logo"
+        draggable="false"
+      />
     </button>
     <button
       type="button"
@@ -53,7 +58,7 @@
       aria-label="Play bass tone"
       onclick={() => playBassTone(55.0)}
     >
-      <img src={wooferSrc} alt="" class="woofer" />
+      <img src={wooferSrc} alt="" class="woofer" draggable="false" />
     </button>
     <button
       type="button"
@@ -61,7 +66,7 @@
       aria-label="Play bass tone"
       onclick={() => playBassTone(55.0)}
     >
-      <img src={wooferSrc} alt="" class="woofer" />
+      <img src={wooferSrc} alt="" class="woofer" draggable="false" />
     </button>
     {#if showSoundToggle}
       <button
@@ -94,6 +99,8 @@
     object-position: center;
     margin: 0;
     display: block;
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   .logo-button {
@@ -133,6 +140,8 @@
     object-position: center;
     display: block;
     transition: transform 0.08s ease-out;
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   .title-row {

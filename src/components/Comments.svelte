@@ -69,9 +69,14 @@
             href={comment.user.profileUrl}
             target="_blank"
             rel="noreferrer"
+            draggable="false"
           >
             {#if comment.user.avatarUrl}
-              <img src={comment.user.avatarUrl} alt={comment.user.username} />
+              <img
+                src={comment.user.avatarUrl}
+                alt={comment.user.username}
+                draggable="false"
+              />
             {:else}
               <span class="avatar-fallback">
                 {comment.user.username.slice(0, 1).toUpperCase()}
@@ -199,6 +204,11 @@
     border-radius: 2px;
     object-fit: cover;
     display: block;
+  }
+
+  .avatar-link img {
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   .avatar-fallback {

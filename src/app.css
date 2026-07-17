@@ -19,6 +19,13 @@ a {
   color: #03c;
 }
 
+/* Keep artwork/avatars interactive via their parent link/button, not as native drags. */
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
+}
+
 body {
   margin: 0;
   min-width: 320px;

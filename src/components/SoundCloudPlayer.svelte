@@ -340,9 +340,10 @@
     aria-label={playing ? `Pause ${title}` : `Play ${title}`}
     disabled={loading || !!error}
     onclick={togglePlay}
+    draggable="false"
   >
     {#if cover}
-      <img class="cover" src={cover} alt="" />
+      <img class="cover" src={cover} alt="" draggable="false" />
     {/if}
 
     {#if loading}
@@ -507,6 +508,8 @@
     height: 100%;
     object-fit: contain;
     display: block;
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   .overlay {
