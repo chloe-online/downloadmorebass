@@ -220,7 +220,7 @@
     gap: 0.5rem;
     margin-bottom: 0.45rem;
     padding-bottom: 0.3rem;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--theme-gray);
   }
 
   .subscribe-panel-title {

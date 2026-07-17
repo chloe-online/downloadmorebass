@@ -143,7 +143,7 @@
   }
 
   .header {
-    color: grey;
+    color: var(--theme-darkgrey);
   }
 
   .time {
@@ -193,6 +193,7 @@
     margin-bottom: 2px;
     align-self: stretch;
     text-align: left;
+    color: var(--theme-darkgrey);
   }
 
   .genre-link {
@@ -209,7 +210,9 @@
   .stars {
     color: red;
     font-size: 18px;
-    line-height: 16px;
+    line-height: 1;
+    overflow: visible;
+    vertical-align: text-bottom;
   }
 
   img {

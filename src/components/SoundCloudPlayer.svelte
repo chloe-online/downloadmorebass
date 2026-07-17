@@ -601,7 +601,7 @@
     height: 0;
     border-style: solid;
     border-width: 6px 0 6px 10px;
-    border-color: transparent transparent transparent #ddd;
+    border-color: transparent transparent transparent var(--theme-gray);
   }
 
   .play-btn.is-playing .play-icon::before,
@@ -611,7 +611,7 @@
     top: 0;
     width: 3px;
     height: 12px;
-    background: #ddd;
+    background: var(--theme-gray);
     border-radius: 1px;
   }
 
@@ -639,7 +639,7 @@
     height: 0;
     border-style: solid;
     border-width: 3px 4px 3px 0;
-    border-color: transparent #ddd transparent transparent;
+    border-color: transparent var(--theme-gray) transparent transparent;
   }
 
   .volume-icon::after {
@@ -649,7 +649,7 @@
     top: 1px;
     width: 5px;
     height: 10px;
-    background: #ddd;
+    background: var(--theme-gray);
     clip-path: polygon(0 35%, 100% 0, 100% 100%, 0 65%);
   }
 
@@ -666,7 +666,7 @@
     position: absolute;
     width: 12px;
     height: 2px;
-    background: #ddd;
+    background: var(--theme-gray);
     transform: rotate(-45deg);
     border-radius: 1px;
   }
@@ -721,7 +721,7 @@
     height: 12px;
     margin-left: -3px;
     transform: translateY(-50%);
-    background: #ddd;
+    background: var(--theme-gray);
     border: 1px solid #888;
     pointer-events: none;
   }
@@ -782,7 +782,7 @@
     height: 10px;
     margin-left: -5px;
     margin-top: -5px;
-    background: #ddd;
+    background: var(--theme-gray);
     border: 1px solid #888;
     border-radius: 1px;
     pointer-events: none;

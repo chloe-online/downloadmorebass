@@ -54,7 +54,7 @@
     align-items: flex-end;
     justify-content: space-between;
     gap: 8px;
-    background-color: #ddd;
+    background-color: var(--theme-gray);
     width: 100%;
     box-sizing: border-box;
     padding: 6px 6px 0;

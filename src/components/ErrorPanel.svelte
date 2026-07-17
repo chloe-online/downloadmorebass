@@ -72,7 +72,7 @@
     gap: 0.75rem;
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--theme-gray);
   }
 
   .error-panel-action {

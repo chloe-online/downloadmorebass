@@ -17,8 +17,10 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    border-top-left-radius: 1rem;
-    border-top-right-radius: 1rem;
+    border: 1px solid #999;
+    border-bottom: none;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
     flex-shrink: 0;
   }
 

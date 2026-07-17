@@ -169,7 +169,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ddd;
+    background: var(--theme-gray);
     font-family: Arial, sans-serif;
     font-size: 28px;
     font-weight: bold;

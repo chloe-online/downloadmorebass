@@ -1,6 +1,8 @@
 :root {
   --layout-max: 875px;
   --song-max: 555px;
+  --theme-gray: #ddd;
+  --theme-darkgrey: #666;
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.5;
   font-weight: 400;

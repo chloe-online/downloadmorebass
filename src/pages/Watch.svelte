@@ -552,7 +552,7 @@
     gap: 0.5rem;
     min-width: 0;
     margin-top: 0.5rem;
-    background: #ddd;
+    background: var(--theme-gray);
     border: 1px solid #999;
     padding: 0.5rem;
     cursor: pointer;
@@ -796,8 +796,8 @@
     letter-spacing: 0;
     font-size: 24px;
     line-height: 0.7;
-    height: 0.7em;
-    overflow: hidden;
+    height: auto;
+    overflow: visible;
   }
 
   .rating span {
@@ -805,7 +805,8 @@
     margin: 0;
     padding: 0;
     line-height: 0.7;
-    height: 0.7em;
+    height: auto;
+    overflow: visible;
   }
 
   .rating .filled {
@@ -858,7 +859,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ddd;
+    background: var(--theme-gray);
     font-family: Arial, sans-serif;
     font-size: 16px;
     font-weight: bold;

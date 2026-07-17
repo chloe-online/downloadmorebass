@@ -59,7 +59,7 @@
     font-weight: bold;
     margin: 0 0 0.75rem;
     color: #333;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--theme-gray);
     padding-bottom: 0.35rem;
     width: 100%;
     box-sizing: border-box;
