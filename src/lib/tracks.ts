@@ -2,6 +2,7 @@ import { fetchTracks } from "./api";
 import type { Track, TracksResponse } from "../../shared/types";
 
 let cache: TracksResponse | null = null;
+let inflight: Promise<TracksResponse> | null = null;
 
 export function trackSlug(url: string): string {
   const parts = new URL(url).pathname.split("/").filter(Boolean);
@@ -9,11 +10,22 @@ export function trackSlug(url: string): string {
 }
 
 export async function getTracks(): Promise<TracksResponse> {
-  if (!cache) {
-    cache = await fetchTracks();
+  if (cache) {
+    return cache;
   }
 
-  return cache;
+  if (!inflight) {
+    inflight = fetchTracks()
+      .then((data) => {
+        cache = data;
+        return data;
+      })
+      .finally(() => {
+        inflight = null;
+      });
+  }
+
+  return inflight;
 }
 
 export function getArtistProfile() {

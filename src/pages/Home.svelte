@@ -16,6 +16,8 @@
   type SortMode = "featured" | "popular" | "listened";
 
   const ERROR_REVEAL_DELAY_MS = 400;
+  /** Fallback if the request promise never settles (broken in-app browsers). */
+  const LOAD_WATCHDOG_MS = 12_000;
 
   let location = $state<Location>(getLocation());
   let tracks: Track[] = $state<Track[]>([]);
@@ -26,6 +28,7 @@
   let showTracksError = $state(false);
   let sortMode = $state<SortMode>("featured");
   let errorRevealTimeout: ReturnType<typeof setTimeout> | null = null;
+  let loadWatchdogTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function clearErrorReveal() {
     if (errorRevealTimeout !== null) {
@@ -35,6 +38,13 @@
     showTracksError = false;
   }
 
+  function clearLoadWatchdog() {
+    if (loadWatchdogTimeout !== null) {
+      clearTimeout(loadWatchdogTimeout);
+      loadWatchdogTimeout = null;
+    }
+  }
+
   function scheduleErrorReveal() {
     clearErrorReveal();
     errorRevealTimeout = setTimeout(() => {
@@ -42,6 +52,18 @@
       tracksLoading = false;
       showTracksError = true;
     }, ERROR_REVEAL_DELAY_MS);
+  }
+
+  function armLoadWatchdog() {
+    clearLoadWatchdog();
+    loadWatchdogTimeout = setTimeout(() => {
+      loadWatchdogTimeout = null;
+      if (!tracksLoading || showTracksError) {
+        return;
+      }
+      tracksError = tracksError ?? "Request timed out";
+      scheduleErrorReveal();
+    }, LOAD_WATCHDOG_MS);
   }
 
   const searchQuery = $derived(location.q);
@@ -68,6 +90,7 @@
     tracksLoading = true;
     tracksError = null;
     clearErrorReveal();
+    armLoadWatchdog();
 
     return getTracks()
       .then((data) => {
@@ -87,6 +110,9 @@
         tracksError =
           error instanceof Error ? error.message : "Failed to load tracks";
         scheduleErrorReveal();
+      })
+      .finally(() => {
+        clearLoadWatchdog();
       });
   }
 
@@ -100,6 +126,7 @@
     return () => {
       unsubscribe();
       clearErrorReveal();
+      clearLoadWatchdog();
     };
   });
 </script>
