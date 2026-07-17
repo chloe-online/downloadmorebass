@@ -161,8 +161,21 @@ function clientIp(request: Request): string {
   return request.headers.get("CF-Connecting-IP") ?? "unknown";
 }
 
-function requestOrigin(request: Request): string {
-  return new URL(request.url).origin;
+/** Site origin for links in outbound email — never derived from the request Host. */
+function publicOrigin(env: Env): string | null {
+  const raw = env.PUBLIC_ORIGIN?.trim() ?? "";
+  if (!raw) {
+    return null;
+  }
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    return parsed.origin;
+  } catch {
+    return null;
+  }
 }
 
 async function readJsonBody(
@@ -302,7 +315,7 @@ async function sendConfirm(
   token: string,
   origin: string,
 ): Promise<boolean> {
-  const confirmUrl = `${origin}/api/confirm?token=${token}`;
+  const confirmUrl = `${origin}/api/confirm?token=${encodeURIComponent(token)}`;
   const content = buildConfirmEmail(confirmUrl);
   return sendResendEmail(env, {
     to: email,
@@ -363,7 +376,12 @@ export async function handleSubscribe(
     return jsonResponse({ error: "Verification failed" }, 400);
   }
 
-  const origin = requestOrigin(request);
+  const origin = publicOrigin(env);
+  if (!origin) {
+    console.error("PUBLIC_ORIGIN is missing or invalid");
+    return jsonResponse({ error: "Subscribe unavailable" }, 503);
+  }
+
   const existing = await getSubscriberByEmail(env, email);
   const ok: SubscribeResponse = { ok: true };
 
@@ -579,13 +597,18 @@ export async function handleAnnounce(
     return jsonResponse({ error: "Invalid url" }, 400);
   }
 
+  const origin = publicOrigin(env);
+  if (!origin) {
+    console.error("PUBLIC_ORIGIN is missing or invalid");
+    return jsonResponse({ error: "Announce unavailable" }, 503);
+  }
+
   const { results } = await env.DB.prepare(
     `SELECT email, unsubscribe_token FROM subscribers WHERE status = ?`,
   )
     .bind("active")
     .all<{ email: string; unsubscribe_token: string | null }>();
 
-  const origin = requestOrigin(request);
   let sent = 0;
   let failed = 0;
   const chunkSize = 50;
@@ -599,9 +622,9 @@ export async function handleAnnounce(
           return;
         }
         // Human-facing page in the email body
-        const unsubscribeUrl = `${origin}/unsubscribe?token=${row.unsubscribe_token}`;
+        const unsubscribeUrl = `${origin}/unsubscribe?token=${encodeURIComponent(row.unsubscribe_token)}`;
         // One-click / List-Unsubscribe must hit the API directly (RFC 8058)
-        const listUnsubscribeUrl = `${origin}/api/unsubscribe?token=${row.unsubscribe_token}`;
+        const listUnsubscribeUrl = `${origin}/api/unsubscribe?token=${encodeURIComponent(row.unsubscribe_token)}`;
         const content = buildAnnounceEmail({
           title,
           message,

@@ -14,6 +14,7 @@
   "vars": {
     "SOUNDCLOUD_USER": "chloemusic8008",
     "FROM_EMAIL": "chloe@downloadmorebass.com",
+    "PUBLIC_ORIGIN": "https://downloadmorebass.com",
   },
   "d1_databases": [
     {

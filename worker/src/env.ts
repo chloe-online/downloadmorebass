@@ -7,5 +7,7 @@ export interface Env {
   RESEND_API_KEY: string;
   TURNSTILE_SECRET_KEY: string;
   FROM_EMAIL: string;
+  /** Canonical site origin for links in outbound email (never request Host). */
+  PUBLIC_ORIGIN: string;
   SUBSCRIBE_RATE_LIMITER: RateLimit;
 }
