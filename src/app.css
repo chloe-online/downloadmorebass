@@ -34,6 +34,12 @@ img {
   pointer-events: none;
 }
 
+/* Prevent iOS/Android tap highlight flash and double-tap zoom on woofers. */
+button.woofer-button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   min-width: 320px;
