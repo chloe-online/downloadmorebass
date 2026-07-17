@@ -41,6 +41,7 @@
     event.preventDefault();
     event.stopPropagation();
     navigate(homePath(genreLabel));
+    window.scrollTo(0, 0);
   }
 </script>
 

@@ -50,6 +50,7 @@
   function openTag(event: MouseEvent, tag: string) {
     event.preventDefault();
     navigate(homePath(tag));
+    window.scrollTo(0, 0);
   }
 </script>
 

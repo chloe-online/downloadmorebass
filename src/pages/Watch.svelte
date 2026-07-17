@@ -331,6 +331,7 @@
                         event.preventDefault();
                         event.stopPropagation();
                         navigate(homePath(track?.genre ?? "all"));
+                        window.scrollTo(0, 0);
                       }}>{track.genre}</a
                     >
                   </p>
@@ -346,6 +347,7 @@
                           event.preventDefault();
                           event.stopPropagation();
                           navigate(homePath(tag));
+                          window.scrollTo(0, 0);
                         }}>{tag}</a
                       >
                     {/each}
