@@ -22,13 +22,29 @@ export function buildConfirmEmail(confirmUrl: string): {
 } {
   const safeUrl = escapeHtml(confirmUrl);
   return {
-    subject: "Confirm your downloadmorebass subscription",
+    subject: `Confirm your subscription to downloadmorebass.com`,
     html: `<!DOCTYPE html>
 <html>
-  <body style="font-family: Arial, sans-serif; color: #222; line-height: 1.5;">
-    <p>Confirm your subscription to get notified when new songs drop on downloadmorebass.</p>
-    <p><a href="${safeUrl}">Confirm subscription</a></p>
-    <p style="color: #666; font-size: 12px;">If you did not request this, you can ignore this email.</p>
+  <body style="margin: 0; padding: 24px 12px; background: #f0f0f0; font-family: Arial, Helvetica, sans-serif; color: #222; line-height: 1.5;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td align="center">
+          <p style="width: 100%; max-width: 420px; margin: 0 0 16px; text-align: left; font-size: 14px; color: #222;">Thank you for subscribing to downloadmorebass.com</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 420px; background: #fff; border: 1px solid #ccc;">
+            <tr>
+              <td style="padding: 20px 24px; text-align: center;">
+                <p style="margin: 0 0 16px; font-size: 14px;">Confirm to get notified when new tracks drop, news and more!</p>
+                <p style="margin: 0 0 16px; font-size: 13px; color: #666;">Your attention is greatly appreciated and updates will be hand crafted and meaningful.</p>
+                <p style="margin: 0 0 16px;">
+                  <a href="${safeUrl}" style="display: inline-block; border: 1px solid #999; background: #eee; color: #222; font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; text-decoration: none; padding: 8px 14px;">Yes, I want to subscribe</a>
+                </p>
+                <p style="margin: 0; color: #666; font-size: 12px;">If you did not request this, you can ignore this email.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>`,
     text: `Confirm your subscription to get notified when new songs drop on downloadmorebass.\n\n${confirmUrl}\n\nIf you did not request this, you can ignore this email.`,

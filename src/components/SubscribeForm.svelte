@@ -15,11 +15,14 @@
     "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
 
   let {
-    description = "Subscribe to newsletter for updates about new tracks and more!",
+    description = "Enter your email to subscribe for updates about new tracks and more!",
     inputId = "subscribe-email",
     successMessage = "Check your email to confirm",
     variant = "bar",
   }: Props = $props();
+
+  const EMAIL_RE =
+    /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
 
   let email = $state("");
   let website = $state("");
@@ -28,11 +31,33 @@
   let status = $state<"idle" | "loading" | "success" | "error">("idle");
   let resendStatus = $state<"idle" | "loading" | "sent">("idle");
   let errorMessage = $state("");
+  let emailInvalid = $state(false);
   let turnstileEl = $state<HTMLDivElement | null>(null);
   let widgetId = $state<string | null>(null);
   let turnstileScale = $state(1);
   let turnstileHeight = $state<number | null>(null);
   let fitObserver: ResizeObserver | null = null;
+
+  function validateEmail(value: string): string | null {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "Enter your email address";
+    }
+    if (trimmed.length > 254 || !EMAIL_RE.test(trimmed)) {
+      return "That's not a real email address dummy";
+    }
+    return null;
+  }
+
+  function onEmailInput() {
+    if (emailInvalid || status === "error") {
+      emailInvalid = false;
+      if (status === "error") {
+        status = "idle";
+        errorMessage = "";
+      }
+    }
+  }
 
   function fitTurnstile() {
     if (!turnstileEl) {
@@ -151,7 +176,16 @@
       return;
     }
 
+    const emailError = validateEmail(email);
+    if (emailError) {
+      status = "error";
+      emailInvalid = true;
+      errorMessage = emailError;
+      return;
+    }
+
     errorMessage = "";
+    emailInvalid = false;
     status = "loading";
 
     try {
@@ -166,6 +200,7 @@
       website = "";
     } catch (error) {
       status = "error";
+      emailInvalid = false;
       errorMessage =
         error instanceof Error ? error.message : "Something went wrong";
     } finally {
@@ -189,6 +224,7 @@
       resendStatus = "sent";
     } catch (error) {
       resendStatus = "idle";
+      emailInvalid = false;
       errorMessage =
         error instanceof Error ? error.message : "Something went wrong";
     } finally {
@@ -200,6 +236,7 @@
 <form
   class="subscribe-form"
   class:popup={variant === "popup"}
+  novalidate
   onsubmit={onSubmit}
 >
   {#if status === "success"}
@@ -225,13 +262,17 @@
       <input
         id={inputId}
         class="subscribe-input"
+        class:invalid={emailInvalid}
         type="email"
         name="email"
         autocomplete="email"
         maxlength="254"
         required
         placeholder="you@example.com"
+        aria-invalid={emailInvalid}
+        aria-describedby={status === "error" ? `${inputId}-error` : undefined}
         bind:value={email}
+        oninput={onEmailInput}
         disabled={status === "loading"}
       />
       <button
@@ -264,7 +305,9 @@
     <p class="subscribe-error">Subscribe is unavailable right now</p>
   {/if}
   {#if status === "error"}
-    <p class="subscribe-error">{errorMessage}</p>
+    <p id={`${inputId}-error`} class="subscribe-error" role="alert">
+      {errorMessage}
+    </p>
   {/if}
 </form>
 
@@ -342,6 +385,10 @@
     font-size: 12px;
     padding: 0.4rem 0.5rem;
     text-align: center;
+  }
+
+  .subscribe-input.invalid {
+    border-color: #a33;
   }
 
   .subscribe-button {

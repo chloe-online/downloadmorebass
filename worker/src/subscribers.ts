@@ -325,6 +325,15 @@ async function sendConfirm(
   });
 }
 
+/** Stamp cooldown only after a successful send so failed sends stay retryable. */
+async function markConfirmationSent(env: Env, id: number): Promise<void> {
+  await env.DB.prepare(
+    `UPDATE subscribers SET confirmation_sent_at = ? WHERE id = ?`,
+  )
+    .bind(nowSqlite(), id)
+    .run();
+}
+
 export async function handleSubscribe(
   request: Request,
   env: Env,
@@ -388,15 +397,17 @@ export async function handleSubscribe(
   if (!existing) {
     const token = generateToken();
     const expires = hoursFromNow(CONFIRM_TTL_HOURS);
-    const sentAt = nowSqlite();
-    await env.DB.prepare(
+    const inserted = await env.DB.prepare(
       `INSERT INTO subscribers
-        (email, status, confirm_token, confirm_expires_at, confirmation_sent_at)
-       VALUES (?, 'pending', ?, ?, ?)`,
+        (email, status, confirm_token, confirm_expires_at)
+       VALUES (?, 'pending', ?, ?)
+       RETURNING id`,
     )
-      .bind(email, token, expires, sentAt)
-      .run();
-    await sendConfirm(env, email, token, origin);
+      .bind(email, token, expires)
+      .first<{ id: number }>();
+    if (inserted && (await sendConfirm(env, email, token, origin))) {
+      await markConfirmationSent(env, inserted.id);
+    }
     return jsonResponse(ok);
   }
 
@@ -413,21 +424,21 @@ export async function handleSubscribe(
 
   const token = generateToken();
   const expires = hoursFromNow(CONFIRM_TTL_HOURS);
-  const sentAt = nowSqlite();
   await env.DB.prepare(
     `UPDATE subscribers
      SET status = 'pending',
          confirm_token = ?,
          confirm_expires_at = ?,
-         confirmation_sent_at = ?,
          unsubscribe_token = NULL,
          confirmed_at = NULL,
          unsubscribed_at = NULL
      WHERE id = ?`,
   )
-    .bind(token, expires, sentAt, existing.id)
+    .bind(token, expires, existing.id)
     .run();
-  await sendConfirm(env, email, token, origin);
+  if (await sendConfirm(env, email, token, origin)) {
+    await markConfirmationSent(env, existing.id);
+  }
   return jsonResponse(ok);
 }
 
