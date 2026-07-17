@@ -276,7 +276,6 @@
 
     const track = event.currentTarget as HTMLElement;
     event.preventDefault();
-    track.setPointerCapture(event.pointerId);
 
     volumeScrubbing = true;
     setVolumeFromClientX(event.clientX, track);
@@ -285,16 +284,17 @@
       setVolumeFromClientX(moveEvent.clientX, track);
     };
 
-    const onEnd = () => {
+    const onEnd = (endEvent: PointerEvent) => {
+      setVolumeFromClientX(endEvent.clientX, track);
       volumeScrubbing = false;
-      track.removeEventListener("pointermove", onMove);
-      track.removeEventListener("pointerup", onEnd);
-      track.removeEventListener("pointercancel", onEnd);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onEnd);
+      window.removeEventListener("pointercancel", onEnd);
     };
 
-    track.addEventListener("pointermove", onMove);
-    track.addEventListener("pointerup", onEnd);
-    track.addEventListener("pointercancel", onEnd);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onEnd);
   }
 
   function handleVolumeKeydown(event: KeyboardEvent) {
