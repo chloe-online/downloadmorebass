@@ -2,7 +2,7 @@
   import FeaturedPlaylistSkeleton from "./FeaturedPlaylistSkeleton.svelte";
   import SearchResultsSkeleton from "./SearchResultsSkeleton.svelte";
   import SiteMainBarSkeleton from "./SiteMainBarSkeleton.svelte";
-  import SubscribeSectionSkeleton from "./SubscribeSectionSkeleton.svelte";
+  import FeaturedArtistSectionSkeleton from "./FeaturedArtistSectionSkeleton.svelte";
 
   let { searchQuery = null }: { searchQuery?: string | null } = $props();
 </script>
@@ -18,7 +18,7 @@
 
   <aside class="site-sidebar">
     <SiteMainBarSkeleton />
-    <SubscribeSectionSkeleton />
+    <FeaturedArtistSectionSkeleton />
   </aside>
 </div>
 

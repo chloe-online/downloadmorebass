@@ -2,7 +2,7 @@
   import SoundCloudPlayer from "../components/SoundCloudPlayer.svelte";
   import Comments from "../components/Comments.svelte";
   import ExpandableText from "../components/ExpandableText.svelte";
-  import SubscribeForm from "../components/SubscribeForm.svelte";
+  import SubscribeButton from "../components/SubscribeButton.svelte";
   import WatchPageSkeleton from "../components/WatchPageSkeleton.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
@@ -25,26 +25,16 @@
   let error = $state<string | null>(null);
   let commentsError = $state<string | null>(null);
   let moreBassExpanded = $state(false);
-  let subscribeOpen = $state(false);
   let trackInfoExpanded = $state(false);
 
   $effect(() => {
     slug;
     moreBassExpanded = false;
-    subscribeOpen = false;
     trackInfoExpanded = false;
   });
 
   function toggleMoreBass() {
     moreBassExpanded = !moreBassExpanded;
-  }
-
-  function openSubscribe() {
-    subscribeOpen = true;
-  }
-
-  function closeSubscribe() {
-    subscribeOpen = false;
   }
 
   function toggleTrackInfo() {
@@ -212,51 +202,11 @@
                     </span>
                   </div>
 
-                  <div class="subscribe-wrap">
-                    <button
-                      type="button"
-                      class="subscribe-button"
-                      onclick={openSubscribe}
-                    >
-                      Subscribe
-                    </button>
-
-                    {#if subscribeOpen}
-                      <!-- svelte-ignore a11y_no_static_element_interactions -->
-                      <div
-                        class="subscribe-backdrop"
-                        onclick={closeSubscribe}
-                      ></div>
-                      <div
-                        class="subscribe-panel"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="watch-subscribe-title"
-                      >
-                        <div class="subscribe-panel-header">
-                          <h2
-                            id="watch-subscribe-title"
-                            class="subscribe-panel-title"
-                          >
-                            Subscribe
-                          </h2>
-                          <button
-                            type="button"
-                            class="subscribe-close"
-                            aria-label="Close subscribe popup"
-                            onclick={closeSubscribe}
-                          >
-                            [x]
-                          </button>
-                        </div>
-                        <SubscribeForm
-                          inputId="watch-subscribe-email"
-                          variant="popup"
-                          description={`enter your email to keep up with ${artistProfile.username}`}
-                        />
-                      </div>
-                    {/if}
-                  </div>
+                  <SubscribeButton
+                    artistUsername={artistProfile.username}
+                    inputId="watch-subscribe-email"
+                    resetKey={slug}
+                  />
                 </div>
               {/if}
             </div>
@@ -531,12 +481,6 @@
     font-weight: semibold;
   }
 
-  .subscribe-wrap {
-    position: relative;
-    flex-shrink: 0;
-    align-self: flex-start;
-  }
-
   .artist-row {
     display: flex;
     flex-direction: row;
@@ -676,83 +620,6 @@
     font-size: 12px;
     line-height: 1.2;
     color: #666;
-  }
-
-  .subscribe-button {
-    display: inline-block;
-    font-family: Arial, sans-serif;
-    font-size: 11px;
-    font-weight: bold;
-    color: #333;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
-    border: 1px solid #d3d3d3;
-    border-radius: 3px;
-    padding: 4px 10px;
-    text-decoration: none;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-    cursor: pointer;
-  }
-
-  .subscribe-button:hover {
-    border-color: #999;
-  }
-
-  .subscribe-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-  }
-
-  .subscribe-panel {
-    position: absolute;
-    top: calc(100% + 0.35rem);
-    left: 0;
-    right: auto;
-    z-index: 50;
-    width: min(16.5rem, calc(100vw - 2rem));
-    box-sizing: border-box;
-    border: 1px solid #999;
-    border-radius: 2px;
-    padding: 0.65rem;
-    background: #ffffe1;
-    box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
-  }
-
-  .subscribe-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.45rem;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .subscribe-panel-title {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-  }
-
-  .subscribe-close {
-    border: none;
-    background: transparent;
-    color: #03c;
-    font-family: Arial, sans-serif;
-    font-size: 11px;
-    line-height: 1;
-    padding: 0;
-    cursor: pointer;
-    text-decoration: underline;
-  }
-
-  .subscribe-close:hover {
-    text-decoration: none;
   }
 
   .new-tag {

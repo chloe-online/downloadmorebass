@@ -4,15 +4,11 @@
   import SearchResults from "../components/SearchResults.svelte";
   import HomePageSkeleton from "../components/HomePageSkeleton.svelte";
   import SiteMainBar from "../components/SiteMainBar.svelte";
-  import SubscribeSection from "../components/SubscribeSection.svelte";
+  import FeaturedArtistSection from "../components/FeaturedArtistSection.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import { getTracks } from "../lib/tracks";
-  import {
-    getLocation,
-    subscribe,
-    type Location,
-  } from "../lib/router";
+  import { getLocation, subscribe, type Location } from "../lib/router";
   import type { ArtistProfile, Track } from "../../shared/types";
 
   type SortMode = "featured" | "popular" | "listened";
@@ -197,7 +193,7 @@
               </div>
             </div>
           {:else if searchQuery}
-            <SearchResults tracks={tracks} query={searchQuery} />
+            <SearchResults {tracks} query={searchQuery} />
           {:else}
             <div class="playlist">
               <div class="featured-songs">
@@ -276,7 +272,12 @@
 
         <aside class="site-sidebar">
           <SiteMainBar />
-          <SubscribeSection />
+          {#if artistProfile}
+            <div class="featured-artist-container">
+              <h2>Featured artist</h2>
+              <FeaturedArtistSection artist={artistProfile} />
+            </div>
+          {/if}
         </aside>
       </div>
     {/if}
@@ -330,6 +331,13 @@
     top: 1rem;
   }
 
+  h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: bold;
+    color: #333;
+  }
+
   .playlist {
     display: flex;
     flex-direction: column;
@@ -342,11 +350,6 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .featured-songs h2 {
-    margin: 0;
-    font-size: 19px;
   }
 
   .featured-subtitle {
