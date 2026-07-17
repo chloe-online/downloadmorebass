@@ -246,27 +246,34 @@
                   </li>
                 {/each}
               </ul>
-              <div class="back-to-top-container">
-                <button class="back-to-top-button" onclick={goToTop}
-                  >Back to top</button
-                >
-              </div>
             </div>
           {/if}
         </div>
 
-        <aside class="site-sidebar">
-          <SiteMainBar />
-          {#if artistProfile}
-            <div class="featured-artist-container">
-              <h2>Featured artist</h2>
-              <FeaturedArtistSection artist={artistProfile} />
+        <aside class="site-sidebar" class:has-tags={tracks.length > 0}>
+          <div class="sidebar-primary">
+            <SiteMainBar />
+            {#if artistProfile}
+              <div class="featured-artist-container">
+                <h2>Featured artist</h2>
+                <FeaturedArtistSection artist={artistProfile} />
+              </div>
+            {/if}
+          </div>
+          {#if tracks.length > 0}
+            <div class="sidebar-tags">
+              <PopularTagsSection {tracks} />
             </div>
           {/if}
-          {#if tracks.length > 0}
-            <PopularTagsSection {tracks} />
-          {/if}
         </aside>
+
+        {#if !showTracksError}
+          <div class="back-to-top-container">
+            <button class="back-to-top-button" onclick={goToTop}
+              >Back to top</button
+            >
+          </div>
+        {/if}
       </div>
     {/if}
   </div>
@@ -293,23 +300,28 @@
   }
 
   .home-layout {
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, var(--song-max)) minmax(0, 1fr);
+    grid-template-areas:
+      "tracks sidebar"
+      "back .";
+    column-gap: 1rem;
+    row-gap: 0;
+    align-items: start;
     width: 100%;
     max-width: var(--layout-max);
     margin: 0 auto;
   }
 
   .tracks-column {
+    grid-area: tracks;
     width: 100%;
     max-width: var(--song-max);
-    flex-shrink: 0;
     min-width: 0;
   }
 
   .site-sidebar {
-    flex: 1;
+    grid-area: sidebar;
     min-width: 0;
     width: 100%;
     display: flex;
@@ -317,6 +329,18 @@
     gap: 1rem;
     /* position: sticky; */
     top: 1rem;
+  }
+
+  .sidebar-primary,
+  .featured-artist-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .sidebar-tags {
+    min-width: 0;
   }
 
   h2 {
@@ -401,16 +425,13 @@
 
   .playlist ul {
     list-style: none;
-    margin: 0;
+    margin: 0 0 8px;
     padding: 0;
   }
 
   .playlist ul li {
     padding-top: 8px;
     padding-bottom: 8px;
-  }
-
-  .playlist ul li:not(:last-child) {
     border-bottom: 1px dotted #bbb;
   }
 
@@ -420,21 +441,44 @@
     }
 
     .home-layout {
-      flex-direction: column;
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "tracks"
+        "sidebar"
+        "back";
+      row-gap: 1rem;
     }
 
     .tracks-column {
       max-width: 100%;
     }
 
-    .site-sidebar {
+    .site-sidebar.has-tags {
       position: static;
       width: 100%;
-      flex: 1 1 100%;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .site-sidebar.has-tags .sidebar-primary {
+      flex: 0 1 auto;
+      width: max-content;
+      max-width: 48%;
+      gap: 0.5rem;
+    }
+
+    .site-sidebar.has-tags .sidebar-tags {
+      flex: 1 1 0;
+    }
+
+    .featured-artist-container {
+      gap: 0.25rem;
     }
   }
 
   .back-to-top-container {
+    grid-area: back;
     display: flex;
     justify-content: center;
     width: 100%;
@@ -443,7 +487,8 @@
   .back-to-top-button {
     font-family: Arial, sans-serif;
     font-size: 12px;
-    font-weight: bold;
+    font-weight: normal;
+    line-height: 1.2;
     color: #03c;
     text-decoration: underline;
     cursor: pointer;
@@ -451,8 +496,6 @@
     border: none;
     padding: 0;
     margin: 0;
-    font: inherit;
-    font-size: inherit;
   }
 
   .back-to-top-button:hover {

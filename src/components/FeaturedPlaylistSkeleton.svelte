@@ -25,10 +25,6 @@
       <li><SongSkeleton /></li>
     {/each}
   </ul>
-
-  <div class="back-to-top-container">
-    <div class="skeleton back-to-top"></div>
-  </div>
 </div>
 
 <style>
@@ -111,27 +107,13 @@
 
   ul {
     list-style: none;
-    margin: 0;
+    margin: 0 0 8px;
     padding: 0;
   }
 
   li {
     padding-top: 8px;
     padding-bottom: 8px;
-  }
-
-  li:not(:last-child) {
     border-bottom: 1px dotted #bbb;
-  }
-
-  .back-to-top-container {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .back-to-top {
-    height: 1.5em;
-    width: 5.5em;
   }
 </style>

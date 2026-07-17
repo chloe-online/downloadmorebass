@@ -35,10 +35,6 @@
     event.preventDefault();
     navigate(homePath());
   }
-
-  function goToTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
 </script>
 
 <div class="playlist">
@@ -94,10 +90,6 @@
       {/each}
     {/if}
   </ul>
-
-  <div class="back-to-top-container">
-    <button class="back-to-top-button" onclick={goToTop}>Back to top</button>
-  </div>
 </div>
 
 <style>
@@ -185,16 +177,13 @@
 
   ul {
     list-style: none;
-    margin: 0;
+    margin: 0 0 8px;
     padding: 0;
   }
 
   li {
     padding-top: 8px;
     padding-bottom: 8px;
-  }
-
-  li:not(:last-child) {
     border-bottom: 1px dotted #bbb;
   }
 
@@ -207,34 +196,5 @@
 
   .search-empty a {
     margin-left: 0.25rem;
-  }
-
-  .back-to-top-container {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .back-to-top-button {
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    color: #03c;
-    text-decoration: underline;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-    font: inherit;
-    font-size: inherit;
-  }
-
-  .back-to-top-button:hover {
-    text-decoration: none;
-  }
-
-  .back-to-top-button:active {
-    text-decoration: underline;
   }
 </style>

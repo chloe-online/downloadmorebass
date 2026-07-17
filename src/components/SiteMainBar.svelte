@@ -134,9 +134,25 @@
   }
 
   @media (max-width: 768px) {
+    .site-main-bar {
+      padding: 0.5rem;
+    }
+
+    .site-main-bar-title {
+      margin-bottom: 0.5rem;
+    }
+
+    .site-main-bar-description {
+      margin-bottom: 0.75rem;
+    }
+
+    .download-button {
+      margin-bottom: 0.75rem;
+    }
+
     .download-btn {
       font-size: 1rem;
-      padding: 0.3rem 2rem;
+      padding: 0.3rem 1rem;
     }
   }
 

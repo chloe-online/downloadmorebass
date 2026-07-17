@@ -1,7 +1,6 @@
 <footer class="site-footer">
   <p>
-    Copyright 2025 <a href="https://chlo.club/">chloemusic®</a> dm me your bass
-    <a href="https://instagram.com/chloemusic8008">here</a>
+    <a href="https://chlo.club">Chloemusic</a> &copy; 2026
   </p>
   <p>All rights reserved bitch</p>
 </footer>

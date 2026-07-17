@@ -166,20 +166,22 @@
 
   @media (max-width: 480px) {
     .bar-body {
-      flex-wrap: wrap;
-      height: auto;
-      min-height: 37px;
-      padding: 5px 8px 5px 0;
-      gap: 0.5rem;
-      border-radius: 0px;
-      border-left: none;
-      border-right: none;
+      gap: 4px;
+      padding-right: 4px;
     }
 
     .search-form {
-      flex: 1 1 100%;
+      flex: 1;
       max-width: none;
-      margin-left: 0;
+      gap: 2px;
+    }
+
+    .nav-link {
+      padding-right: 6px;
+    }
+
+    .search-button {
+      padding: 0 6px;
     }
   }
 </style>

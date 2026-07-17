@@ -262,4 +262,49 @@
     object-fit: contain;
     flex-shrink: 0;
   }
+
+  @media (max-width: 768px) {
+    .featured-artist {
+      padding: 0.5rem;
+    }
+
+    .artist-header {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    .avatar-link {
+      align-self: center;
+    }
+
+    .avatar,
+    .avatar-fallback {
+      width: 56px;
+      height: 56px;
+    }
+
+    .artist-details {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+      width: 100%;
+    }
+
+    .artist-meta {
+      align-items: center;
+    }
+
+    .subscribe-socials-container {
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .bio {
+      margin-bottom: 0;
+      text-align: center;
+    }
+  }
 </style>

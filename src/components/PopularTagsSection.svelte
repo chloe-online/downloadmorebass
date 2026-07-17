@@ -65,6 +65,7 @@
             class:genre={isGenre}
             href={homePath(tag)}
             style="font-size: {sizePx}px"
+            title={tag}
             onclick={(event) => openTag(event, tag)}>{tag}</a
           >
         {/each}
@@ -104,6 +105,11 @@
   }
 
   .tag-link {
+    display: inline-block;
+    max-width: min(100%, 14ch);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-family: Arial, sans-serif;
     line-height: 1.3;
     color: #03c;
@@ -116,5 +122,15 @@
 
   .tag-link:hover {
     text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    .popular-tags {
+      padding: 0.5rem;
+    }
+
+    .tag-cloud {
+      gap: 0.25rem 0.45rem;
+    }
   }
 </style>
