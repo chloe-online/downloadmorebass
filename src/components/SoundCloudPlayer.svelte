@@ -116,6 +116,55 @@
     }
   }
 
+  function seekBy(seconds: number) {
+    if (!audioEl || !duration || loading || error) {
+      return;
+    }
+
+    const time = Math.min(
+      duration,
+      Math.max(0, audioEl.currentTime + seconds),
+    );
+    currentTime = time;
+    audioEl.currentTime = time;
+  }
+
+  function nudgeVolume(step: number) {
+    if (loading || error) {
+      return;
+    }
+
+    const next = Math.min(1, Math.max(0, volume + step));
+    volume = next;
+
+    if (audioEl) {
+      audioEl.volume = next;
+      if (next > 0 && muted) {
+        muted = false;
+        audioEl.muted = false;
+      }
+    }
+  }
+
+  function isTypingTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    const tag = target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+      return true;
+    }
+
+    if (target.isContentEditable) {
+      return true;
+    }
+
+    return Boolean(
+      target.closest("input, textarea, select, [contenteditable='true']"),
+    );
+  }
+
   function getTimeAtClientX(clientX: number, element: HTMLElement): number {
     const rect = element.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
@@ -188,17 +237,11 @@
   }
 
   function handleProgressKeydown(event: KeyboardEvent) {
-    if (!audioEl || !duration) {
-      return;
-    }
-
     const step =
       event.key === "ArrowRight" ? 5 : event.key === "ArrowLeft" ? -5 : 0;
     if (step) {
       event.preventDefault();
-      const time = Math.min(duration, Math.max(0, audioEl.currentTime + step));
-      currentTime = time;
-      audioEl.currentTime = time;
+      seekBy(step);
     }
   }
 
@@ -255,10 +298,6 @@
   }
 
   function handleVolumeKeydown(event: KeyboardEvent) {
-    if (loading || error) {
-      return;
-    }
-
     const step =
       event.key === "ArrowRight" || event.key === "ArrowUp"
         ? 0.05
@@ -271,17 +310,46 @@
     }
 
     event.preventDefault();
-    const next = Math.min(1, Math.max(0, volume + step));
-    volume = next;
-
-    if (audioEl) {
-      audioEl.volume = next;
-      if (next > 0 && muted) {
-        muted = false;
-        audioEl.muted = false;
-      }
-    }
+    nudgeVolume(step);
   }
+
+  $effect(() => {
+    const onKeydown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      if (isTypingTarget(event.target)) {
+        return;
+      }
+
+      switch (event.key) {
+        case " ":
+          event.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowLeft":
+          event.preventDefault();
+          seekBy(-5);
+          break;
+        case "ArrowRight":
+          event.preventDefault();
+          seekBy(5);
+          break;
+        case "ArrowUp":
+          event.preventDefault();
+          nudgeVolume(0.05);
+          break;
+        case "ArrowDown":
+          event.preventDefault();
+          nudgeVolume(-0.05);
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", onKeydown);
+    return () => window.removeEventListener("keydown", onKeydown);
+  });
 
   $effect(() => {
     const id = trackId;
