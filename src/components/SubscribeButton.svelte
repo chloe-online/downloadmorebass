@@ -21,9 +21,8 @@
   let open = $state(false);
   let buttonEl = $state<HTMLButtonElement | null>(null);
   let panelEl = $state<HTMLDivElement | null>(null);
-  let placeAbove = $state(false);
-  let alignEnd = $state(false);
   let positioned = $state(false);
+  let panelStyle = $state("");
 
   const titleId = $derived(`${inputId}-title`);
   const formDescription = $derived(description);
@@ -45,6 +44,9 @@
 
     const onReposition = () => positionPanel();
     window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
+    window.visualViewport?.addEventListener("resize", onReposition);
+    window.visualViewport?.addEventListener("scroll", onReposition);
 
     resizeObserver?.disconnect();
     resizeObserver = new ResizeObserver(onReposition);
@@ -55,6 +57,9 @@
 
     return () => {
       window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
+      window.visualViewport?.removeEventListener("resize", onReposition);
+      window.visualViewport?.removeEventListener("scroll", onReposition);
       resizeObserver?.disconnect();
       resizeObserver = null;
     };
@@ -70,25 +75,39 @@
     }
 
     const btn = buttonEl.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const viewport = window.visualViewport;
+    const viewportLeft = viewport?.offsetLeft ?? 0;
+    const viewportTop = viewport?.offsetTop ?? 0;
+    const vw = viewport?.width ?? window.innerWidth;
+    const vh = viewport?.height ?? window.innerHeight;
+    const viewportRight = viewportLeft + vw;
+    const viewportBottom = viewportTop + vh;
     const width = panelEl.offsetWidth;
     const height = panelEl.offsetHeight;
+    const maxHeight = Math.max(0, vh - VIEW_PAD * 2);
+    const panelHeight = Math.min(height, maxHeight);
 
-    const spaceBelow = vh - VIEW_PAD - btn.bottom;
-    const spaceAbove = btn.top - VIEW_PAD;
-    placeAbove = spaceBelow < height + PANEL_GAP && spaceAbove > spaceBelow;
+    // Prefer opening under the button; flip above only when needed.
+    const spaceBelow = viewportBottom - VIEW_PAD - btn.bottom;
+    const spaceAbove = btn.top - viewportTop - VIEW_PAD;
+    const placeAbove =
+      spaceBelow < panelHeight + PANEL_GAP && spaceAbove > spaceBelow;
 
-    const fitsStart = btn.left + width <= vw - VIEW_PAD;
-    const fitsEnd = btn.right - width >= VIEW_PAD;
-    if (fitsStart) {
-      alignEnd = false;
-    } else if (fitsEnd) {
-      alignEnd = true;
-    } else {
-      alignEnd = btn.left + btn.width / 2 > vw / 2;
-    }
+    // Start left-aligned with the button, then nudge left/right just enough
+    // to stay fully on screen (not locked to left/right/center).
+    const minLeft = viewportLeft + VIEW_PAD;
+    const maxLeft = viewportRight - VIEW_PAD - width;
+    const left = Math.min(Math.max(btn.left, minLeft), Math.max(minLeft, maxLeft));
 
+    const desiredTop = placeAbove
+      ? btn.top - panelHeight - PANEL_GAP
+      : btn.bottom + PANEL_GAP;
+    const top = Math.min(
+      Math.max(desiredTop, viewportTop + VIEW_PAD),
+      viewportBottom - VIEW_PAD - panelHeight,
+    );
+
+    panelStyle = `left:${left}px;top:${top}px;max-height:${maxHeight}px;`;
     positioned = true;
   }
 
@@ -99,6 +118,7 @@
   function closePanel() {
     open = false;
     positioned = false;
+    panelStyle = "";
   }
 </script>
 
@@ -118,12 +138,11 @@
     <div
       class="subscribe-panel"
       class:is-positioned={positioned}
-      class:place-above={placeAbove}
-      class:align-end={alignEnd}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       bind:this={panelEl}
+      style={panelStyle}
     >
       <div class="subscribe-panel-header">
         <h2 id={titleId} class="subscribe-panel-title">Like what you hear?</h2>
@@ -175,9 +194,7 @@
   }
 
   .subscribe-panel {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
+    position: fixed;
     z-index: 50;
     width: min(16.5rem, calc(100vw - 2rem));
     box-sizing: border-box;
@@ -186,18 +203,9 @@
     padding: 0.65rem;
     background: #ffffe1;
     box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
     visibility: hidden;
     pointer-events: none;
-  }
-
-  .subscribe-panel.place-above {
-    top: auto;
-    bottom: calc(100% + 6px);
-  }
-
-  .subscribe-panel.align-end {
-    left: auto;
-    right: 0;
   }
 
   .subscribe-panel.is-positioned {
