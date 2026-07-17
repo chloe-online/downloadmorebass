@@ -85,8 +85,62 @@ interface StoredTokenRow {
   expires_at: number;
 }
 
+const SOUNDCLOUD_FETCH_TIMEOUT_MS = 8_000;
+const TRACKS_CACHE_FRESH_MS = 2 * 60 * 1000;
+
 let cachedToken: CachedToken | null = null;
 let tokenInFlight: Promise<string> | null = null;
+let tracksRefreshInFlight: Promise<TracksResponse> | null = null;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise.then(
+      (value) => {
+        clearTimeout(timeout);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
+}
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  timeoutMs: number,
+  label: string,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.name === "AbortError" || error.message.includes("aborted"))
+    ) {
+      throw new Error(`${label} timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 function isTokenFresh(expiresAt: number, now = Date.now()): boolean {
   return expiresAt > now + 60_000;
@@ -142,11 +196,16 @@ async function exchangeToken(
     )}`;
   }
 
-  const response = await fetch("https://secure.soundcloud.com/oauth/token", {
-    method: "POST",
-    headers,
-    body,
-  });
+  const response = await fetchWithTimeout(
+    "https://secure.soundcloud.com/oauth/token",
+    {
+      method: "POST",
+      headers,
+      body,
+    },
+    SOUNDCLOUD_FETCH_TIMEOUT_MS,
+    "SoundCloud auth",
+  );
 
   if (!response.ok) {
     const errorBody = await response.text();
@@ -232,12 +291,17 @@ async function getAccessToken(env: Env): Promise<string> {
 
 async function soundCloudFetch<T>(env: Env, path: string): Promise<T> {
   const accessToken = await getAccessToken(env);
-  const response = await fetch(`https://api.soundcloud.com${path}`, {
-    headers: {
-      accept: "application/json; charset=utf-8",
-      Authorization: `OAuth ${accessToken}`,
+  const response = await fetchWithTimeout(
+    `https://api.soundcloud.com${path}`,
+    {
+      headers: {
+        accept: "application/json; charset=utf-8",
+        Authorization: `OAuth ${accessToken}`,
+      },
     },
-  });
+    SOUNDCLOUD_FETCH_TIMEOUT_MS,
+    `SoundCloud ${path.split("?")[0] ?? path}`,
+  );
 
   if (!response.ok) {
     const body = await response.text();
@@ -452,19 +516,39 @@ function toTrack(track: SoundCloudTrack): Track {
   };
 }
 
-async function loadTracksCache(env: Env): Promise<TracksResponse | null> {
+interface TracksCacheEntry {
+  data: TracksResponse;
+  updatedAtMs: number;
+}
+
+function parseSqliteUtc(datetime: string): number {
+  const trimmed = datetime.trim();
+  if (!trimmed) {
+    return Number.NaN;
+  }
+  // D1/SQLite datetime('now') is UTC without a timezone suffix.
+  const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(trimmed)
+    ? trimmed
+    : `${trimmed.replace(" ", "T")}Z`;
+  return Date.parse(normalized);
+}
+
+async function loadTracksCache(env: Env): Promise<TracksCacheEntry | null> {
   const row = await env.DB.prepare(
-    `SELECT payload FROM soundcloud_tracks_cache WHERE soundcloud_user = ?`,
+    `SELECT payload, updated_at FROM soundcloud_tracks_cache WHERE soundcloud_user = ?`,
   )
     .bind(env.SOUNDCLOUD_USER)
-    .first<{ payload: string }>();
+    .first<{ payload: string; updated_at: string }>();
 
   if (!row) {
     return null;
   }
 
   try {
-    return JSON.parse(row.payload) as TracksResponse;
+    return {
+      data: JSON.parse(row.payload) as TracksResponse,
+      updatedAtMs: parseSqliteUtc(row.updated_at),
+    };
   } catch {
     return null;
   }
@@ -485,28 +569,75 @@ async function saveTracksCache(
     .run();
 }
 
-export async function fetchUserTracks(env: Env): Promise<TracksResponse> {
+async function refreshTracksFromSoundCloud(env: Env): Promise<TracksResponse> {
+  const user = await resolveUser(env, env.SOUNDCLOUD_USER);
+  const [rawTracks, rawWebProfiles] = await Promise.all([
+    fetchAllUserTracks(env, user.id),
+    fetchUserWebProfiles(env, user.id),
+  ]);
+  const data: TracksResponse = {
+    user: toArtistProfile(
+      user,
+      rawTracks.length,
+      buildWebProfiles(user, rawWebProfiles),
+    ),
+    tracks: rawTracks.map(toTrack),
+  };
+  await saveTracksCache(env, data);
+  return data;
+}
+
+function refreshTracksInBackground(env: Env): Promise<TracksResponse> {
+  if (tracksRefreshInFlight) {
+    return tracksRefreshInFlight;
+  }
+
+  tracksRefreshInFlight = refreshTracksFromSoundCloud(env)
+    .catch((error: unknown) => {
+      console.error("Background SoundCloud tracks refresh failed:", error);
+      throw error;
+    })
+    .finally(() => {
+      tracksRefreshInFlight = null;
+    });
+
+  return tracksRefreshInFlight;
+}
+
+export async function fetchUserTracks(
+  env: Env,
+  waitUntil?: (promise: Promise<unknown>) => void,
+): Promise<TracksResponse> {
+  const cached = await loadTracksCache(env);
+
+  if (cached) {
+    const ageMs = Number.isFinite(cached.updatedAtMs)
+      ? Date.now() - cached.updatedAtMs
+      : Number.POSITIVE_INFINITY;
+    const isFresh = ageMs < TRACKS_CACHE_FRESH_MS;
+
+    if (!isFresh) {
+      waitUntil?.(
+        refreshTracksInBackground(env).catch(() => {
+          // Errors are logged in refreshTracksInBackground.
+        }),
+      );
+    }
+
+    return cached.data;
+  }
+
   try {
-    const user = await resolveUser(env, env.SOUNDCLOUD_USER);
-    const [rawTracks, rawWebProfiles] = await Promise.all([
-      fetchAllUserTracks(env, user.id),
-      fetchUserWebProfiles(env, user.id),
-    ]);
-    const data: TracksResponse = {
-      user: toArtistProfile(
-        user,
-        rawTracks.length,
-        buildWebProfiles(user, rawWebProfiles),
-      ),
-      tracks: rawTracks.map(toTrack),
-    };
-    await saveTracksCache(env, data);
-    return data;
+    return await withTimeout(
+      refreshTracksInBackground(env),
+      SOUNDCLOUD_FETCH_TIMEOUT_MS * 3,
+      "SoundCloud tracks fetch",
+    );
   } catch (error) {
-    const cached = await loadTracksCache(env);
-    if (cached) {
+    const fallback = await loadTracksCache(env);
+    if (fallback) {
       console.error("SoundCloud tracks fetch failed, serving cache:", error);
-      return cached;
+      return fallback.data;
     }
     throw error;
   }

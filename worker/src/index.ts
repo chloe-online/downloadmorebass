@@ -19,7 +19,11 @@ import {
 } from "./subscribers";
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -52,7 +56,9 @@ export default {
       }
 
       if (url.pathname === "/api/tracks") {
-        const data: TracksResponse = await fetchUserTracks(env);
+        const data: TracksResponse = await fetchUserTracks(env, (promise) =>
+          ctx.waitUntil(promise),
+        );
         return jsonResponse(data);
       }
 

@@ -7,6 +7,33 @@ import type {
 } from "../../shared/types";
 
 const apiBase = import.meta.env.VITE_API_URL ?? "";
+const FETCH_TIMEOUT_MS = 10_000;
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  timeoutMs = FETCH_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (
+      error instanceof DOMException ||
+      (error instanceof Error && error.name === "AbortError")
+    ) {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 async function readBody(response: Response): Promise<unknown> {
   const text = await response.text();
@@ -46,17 +73,21 @@ async function parseResponse<T>(
 }
 
 export async function fetchTracks(): Promise<TracksResponse> {
-  const response = await fetch(`${apiBase}/api/tracks`);
+  const response = await fetchWithTimeout(`${apiBase}/api/tracks`);
   return parseResponse(response, "Failed to load tracks");
 }
 
 export async function fetchComments(trackId: number): Promise<CommentsResponse> {
-  const response = await fetch(`${apiBase}/api/tracks/${trackId}/comments`);
+  const response = await fetchWithTimeout(
+    `${apiBase}/api/tracks/${trackId}/comments`,
+  );
   return parseResponse(response, "Failed to load comments");
 }
 
 export async function fetchStreamUrl(trackId: number): Promise<StreamResponse> {
-  const response = await fetch(`${apiBase}/api/tracks/${trackId}/stream`);
+  const response = await fetchWithTimeout(
+    `${apiBase}/api/tracks/${trackId}/stream`,
+  );
   return parseResponse(response, "Failed to load stream");
 }
 
@@ -65,7 +96,7 @@ export async function subscribeEmail(
   turnstileToken: string,
   website = "",
 ): Promise<SubscribeResponse> {
-  const response = await fetch(`${apiBase}/api/subscribe`, {
+  const response = await fetchWithTimeout(`${apiBase}/api/subscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, turnstileToken, website }),
@@ -76,7 +107,7 @@ export async function subscribeEmail(
 export async function unsubscribeEmail(
   token: string,
 ): Promise<UnsubscribeResponse> {
-  const response = await fetch(`${apiBase}/api/unsubscribe`, {
+  const response = await fetchWithTimeout(`${apiBase}/api/unsubscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token }),
