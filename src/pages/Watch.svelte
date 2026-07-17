@@ -70,14 +70,19 @@
     sameGenreExpanded = !sameGenreExpanded;
   }
 
-  function toggleTrackInfo() {
-    trackInfoExpanded = !trackInfoExpanded;
+  function openTrackInfo() {
+    trackInfoExpanded = true;
+  }
+
+  function closeTrackInfo() {
+    trackInfoExpanded = false;
   }
 
   function handleTrackInfoKeydown(event: KeyboardEvent) {
+    if (trackInfoExpanded) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      toggleTrackInfo();
+      openTrackInfo();
     }
   }
 
@@ -286,10 +291,10 @@
           <div
             class="track-info"
             class:expanded={trackInfoExpanded}
-            role="button"
-            tabindex="0"
+            role={trackInfoExpanded ? undefined : "button"}
+            tabindex={trackInfoExpanded ? undefined : 0}
             aria-expanded={trackInfoExpanded}
-            onclick={toggleTrackInfo}
+            onclick={openTrackInfo}
             onkeydown={handleTrackInfoKeydown}
           >
             <a
@@ -319,7 +324,7 @@
               lines={3}
               expanded={trackInfoExpanded}
               showToggle={false}
-              onToggle={toggleTrackInfo}
+              onToggle={openTrackInfo}
             />
             {#if trackInfoExpanded && (track.genre || track.tags.length > 0)}
               <div class="track-meta">
@@ -364,7 +369,11 @@
                 onclick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  toggleTrackInfo();
+                  if (trackInfoExpanded) {
+                    closeTrackInfo();
+                  } else {
+                    openTrackInfo();
+                  }
                 }}>{trackInfoExpanded ? "less" : "more"}</button
               >)
             </p>
@@ -564,6 +573,10 @@
     padding: 0.5rem;
     cursor: pointer;
     text-align: left;
+  }
+
+  .track-info.expanded {
+    cursor: default;
   }
 
   .track-info:focus-visible {
