@@ -91,10 +91,7 @@
       </div>
 
       <div class="subscribe-socials-container">
-        <SubscribeButton
-          artistUsername={artist.username}
-          inputId="featured-artist-subscribe-email"
-        />
+        <SubscribeButton inputId="featured-artist-subscribe-email" />
 
         <div class="socials">
           {#each artist.webProfiles as profile (profile.url)}

@@ -260,7 +260,6 @@
                   </div>
 
                   <SubscribeButton
-                    artistUsername={artistProfile.username}
                     inputId="watch-subscribe-email"
                     resetKey={slug}
                   />

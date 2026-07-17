@@ -15,7 +15,7 @@
     "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad";
 
   let {
-    description = "New songs drop on SoundCloud — get an email when they do.",
+    description = "Subscribe to newsletter for updates about new tracks and more!",
     inputId = "subscribe-email",
     successMessage = "Check your email to confirm",
     variant = "bar",

@@ -3,7 +3,6 @@
   import SubscribeForm from "./SubscribeForm.svelte";
 
   interface Props {
-    artistUsername: string;
     inputId?: string;
     description?: string;
     /** When this value changes, the popup closes (e.g. route slug). */
@@ -11,7 +10,6 @@
   }
 
   let {
-    artistUsername,
     inputId = "subscribe-email",
     description,
     resetKey = undefined,
@@ -28,9 +26,7 @@
   let positioned = $state(false);
 
   const titleId = $derived(`${inputId}-title`);
-  const formDescription = $derived(
-    description ?? `enter your email to keep up with ${artistUsername}`,
-  );
+  const formDescription = $derived(description);
 
   let resizeObserver: ResizeObserver | null = null;
 
@@ -81,8 +77,7 @@
 
     const spaceBelow = vh - VIEW_PAD - btn.bottom;
     const spaceAbove = btn.top - VIEW_PAD;
-    placeAbove =
-      spaceBelow < height + PANEL_GAP && spaceAbove > spaceBelow;
+    placeAbove = spaceBelow < height + PANEL_GAP && spaceAbove > spaceBelow;
 
     const fitsStart = btn.left + width <= vw - VIEW_PAD;
     const fitsEnd = btn.right - width >= VIEW_PAD;
@@ -131,7 +126,7 @@
       bind:this={panelEl}
     >
       <div class="subscribe-panel-header">
-        <h2 id={titleId} class="subscribe-panel-title">Subscribe</h2>
+        <h2 id={titleId} class="subscribe-panel-title">Like what you hear?</h2>
         <button
           type="button"
           class="subscribe-close"
@@ -141,11 +136,7 @@
           [x]
         </button>
       </div>
-      <SubscribeForm
-        {inputId}
-        variant="popup"
-        description={formDescription}
-      />
+      <SubscribeForm {inputId} variant="popup" description={formDescription} />
     </div>
   {/if}
 </div>
