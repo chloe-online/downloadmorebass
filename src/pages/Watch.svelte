@@ -12,8 +12,15 @@
   import { navigate, listenPath, homePath } from "../lib/router";
   import { findTrackBySlug, getTracks, trackSlug } from "../lib/tracks";
   import { playBassTone } from "../lib/bass";
+  import { isPlayerAudible, playerPlayback } from "../lib/playback.svelte";
   import { formatFullDate, formatRelativeDate } from "../lib/dates";
   import type { ArtistProfile, Comment, Track } from "../../shared/types";
+
+  const wooferSrc = $derived(
+    isPlayerAudible()
+      ? `/woofer.gif?play=${playerPlayback.playId}`
+      : "/woofer-still.png",
+  );
 
   let { slug }: { slug: string | null } = $props();
 
@@ -507,7 +514,7 @@
               aria-label="Play bass tone"
               onclick={() => playBassTone(55.0, 0.5)}
             >
-              <img src="/woofer-still.png" alt="" class="woofer" />
+              <img src={wooferSrc} alt="" class="woofer" />
             </button>
           {/each}
         </div>
