@@ -129,6 +129,13 @@
     padding: 6px 6px 0;
     border-top: 1px solid #999;
     border-bottom: 1px solid #999;
+    min-width: 0;
+  }
+
+  .search-subtitle-content {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
   }
 
   .meta {
@@ -136,6 +143,9 @@
     font-size: 12px;
     line-height: 1.2;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .sort-dropdown {
