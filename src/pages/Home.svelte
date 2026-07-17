@@ -25,9 +25,6 @@
   let tracksError = $state<string | null>(null);
   let showTracksError = $state(false);
   let sortMode = $state<SortMode>("featured");
-  let soundEnabled = $state(false);
-  let audioContext = $state<AudioContext | null>(null);
-  let currentOscillator = $state<OscillatorNode | null>(null);
   let errorRevealTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function clearErrorReveal() {
@@ -62,52 +59,6 @@
       );
     }),
   );
-
-  function createBassTone() {
-    if (!audioContext || !soundEnabled) {
-      return;
-    }
-
-    if (currentOscillator) {
-      currentOscillator.stop();
-    }
-
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.frequency.setValueAtTime(60, audioContext.currentTime);
-    oscillator.type = "triangle";
-
-    const pumpFrequency = 2;
-    const now = audioContext.currentTime;
-
-    gainNode.gain.setValueAtTime(0, now);
-
-    for (let i = 0; i < 100; i++) {
-      const startTime = now + i / pumpFrequency;
-      const peakTime = startTime + 0.25 / pumpFrequency;
-      const endTime = startTime + 1 / pumpFrequency;
-
-      gainNode.gain.linearRampToValueAtTime(1, peakTime);
-      gainNode.gain.linearRampToValueAtTime(0, endTime);
-    }
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    currentOscillator = oscillator;
-    oscillator.start(audioContext.currentTime);
-  }
-
-  function toggleSound() {
-    soundEnabled = !soundEnabled;
-
-    if (!soundEnabled && currentOscillator) {
-      currentOscillator.stop();
-      currentOscillator = null;
-    } else if (soundEnabled && audioContext) {
-      createBassTone();
-    }
-  }
 
   function goToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -145,13 +96,6 @@
     });
 
     loadTracks();
-
-    try {
-      audioContext = new AudioContext();
-      createBassTone();
-    } catch (error) {
-      console.log("Audio context creation failed:", error);
-    }
 
     return () => {
       unsubscribe();

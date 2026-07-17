@@ -15,23 +15,38 @@ async function fetchWithTimeout(
   timeoutMs = FETCH_TIMEOUT_MS,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  // Race a timer as well as AbortSignal — some in-app browsers (esp. Instagram)
+  // hang forever on aborted fetch instead of rejecting.
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`Request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
 
   try {
-    return await fetch(input, {
-      ...init,
-      signal: controller.signal,
-    });
+    return await Promise.race([
+      fetch(input, {
+        ...init,
+        signal: controller.signal,
+      }),
+      timeoutPromise,
+    ]);
   } catch (error) {
     if (
       error instanceof DOMException ||
-      (error instanceof Error && error.name === "AbortError")
+      (error instanceof Error &&
+        (error.name === "AbortError" || error.message.includes("timed out")))
     ) {
       throw new Error(`Request timed out after ${timeoutMs}ms`);
     }
     throw error;
   } finally {
-    clearTimeout(timeout);
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
