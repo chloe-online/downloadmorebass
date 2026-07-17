@@ -221,11 +221,7 @@
             />
           </div>
 
-          <h1 class="video-title">
-            <span class="title-text">
-              {track.title}
-            </span>
-          </h1>
+          <h1 class="video-title">{track.title}</h1>
 
           <div class="song-info">
             <div class="uploader-box">
@@ -295,6 +291,15 @@
             onclick={toggleTrackInfo}
             onkeydown={handleTrackInfoKeydown}
           >
+            <a
+              class="soundcloud-button"
+              href={track.url}
+              target="_blank"
+              rel="noreferrer"
+              onclick={(event) => event.stopPropagation()}
+            >
+              SoundCloud
+            </a>
             <div class="track-info-header">
               <span class="views">{track.listens.toLocaleString()} listens</span
               >
@@ -521,6 +526,7 @@
   }
 
   .track-info {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -540,6 +546,22 @@
     outline-offset: 1px;
   }
 
+  .soundcloud-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #03c;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .soundcloud-button:hover {
+    text-decoration: underline;
+  }
+
   .track-info-header {
     display: flex;
     flex-direction: row;
@@ -547,6 +569,7 @@
     justify-content: flex-start;
     gap: 0.5rem;
     min-width: 0;
+    padding-right: 5.5rem;
   }
   .views {
     font-family: Arial, sans-serif;
@@ -668,30 +691,12 @@
   }
 
   .video-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
     font-family: Arial, sans-serif;
     font-size: 20px;
     font-weight: bold;
-    margin: 0 0 0.5rem;
     line-height: 1.2;
     text-align: left;
-  }
-
-  .video-title .title-text {
-    min-width: 0;
-  }
-
-  .video-title .views {
-    flex-shrink: 0;
-    font-weight: normal;
-    white-space: nowrap;
-  }
-
-  .video-title a {
-    font-weight: semibold;
+    margin: 0 0 0.5rem;
   }
 
   .artist-row {
