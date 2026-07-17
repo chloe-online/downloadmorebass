@@ -144,14 +144,14 @@
       location = next;
     });
 
+    loadTracks();
+
     try {
       audioContext = new AudioContext();
       createBassTone();
     } catch (error) {
       console.log("Audio context creation failed:", error);
     }
-
-    loadTracks();
 
     return () => {
       unsubscribe();
