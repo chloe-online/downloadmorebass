@@ -40,7 +40,7 @@ body {
   }
 }
 
-:global(.skeleton) {
+.skeleton {
   display: block;
   background: #e0e0e0;
   border-radius: 2px;

@@ -1,9 +1,10 @@
-export type Route = "home" | "listen";
+export type Route = "home" | "listen" | "unsubscribe";
 
 export interface Location {
   route: Route;
   slug: string | null;
   q: string | null;
+  token: string | null;
 }
 
 type Listener = (location: Location) => void;
@@ -31,10 +32,25 @@ function parseLocation(): Location {
       route: "listen",
       slug: slug ? normalizeSlug(slug) : null,
       q: null,
+      token: null,
     };
   }
 
-  return { route: "home", slug: null, q: parseQuery(params.get("q")) };
+  if (pathname === "/unsubscribe") {
+    return {
+      route: "unsubscribe",
+      slug: null,
+      q: null,
+      token: parseQuery(params.get("token")),
+    };
+  }
+
+  return {
+    route: "home",
+    slug: null,
+    q: parseQuery(params.get("q")),
+    token: null,
+  };
 }
 
 let current = parseLocation();
@@ -80,4 +96,8 @@ export function homePath(q?: string | null): string {
     return "/";
   }
   return `/?q=${encodeURIComponent(query)}`;
+}
+
+export function unsubscribePath(token: string): string {
+  return `/unsubscribe?token=${encodeURIComponent(token)}`;
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { navigate, listenPath } from "../lib/router";
+  import { navigate, listenPath, homePath } from "../lib/router";
   import { trackSlug } from "../lib/tracks";
   import ExpandableText from "./ExpandableText.svelte";
 
@@ -13,6 +13,7 @@
     duration,
     stars,
     listens,
+    genre = "",
     isNew = false,
   }: {
     cover: string;
@@ -24,14 +25,22 @@
     duration: string;
     stars: number;
     listens: number;
+    genre?: string;
     isNew?: boolean;
   } = $props();
 
   const slug = $derived(trackSlug(url));
+  const genreLabel = $derived(genre.trim());
 
   function openTrack(event: MouseEvent) {
     event.preventDefault();
     navigate(listenPath(slug));
+  }
+
+  function openGenre(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(homePath(genreLabel));
   }
 </script>
 
@@ -69,6 +78,14 @@
         {/each}
       </span>
     </p>
+    {#if genreLabel}
+      <p class="genre">
+        More in
+        <a class="genre-link" href={homePath(genreLabel)} onclick={openGenre}
+          >{genreLabel}</a
+        >
+      </p>
+    {/if}
   </div>
 </article>
 
@@ -161,13 +178,31 @@
     align-items: flex-start;
     justify-content: flex-start;
     width: 120px;
-    height: 100%;
     margin-left: 5px;
     padding-left: 5px;
+    gap: 0px;
   }
   .song-details p {
     margin: 0px;
     padding: 0px;
+  }
+
+  .song-details .genre {
+    margin-top: auto;
+    margin-bottom: 2px;
+    align-self: stretch;
+    text-align: left;
+  }
+
+  .genre-link {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: #03c;
+    text-decoration: underline;
+  }
+
+  .genre-link:hover {
+    text-decoration: underline;
   }
 
   .stars {

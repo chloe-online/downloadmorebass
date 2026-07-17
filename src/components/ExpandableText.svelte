@@ -2,14 +2,23 @@
   let {
     text,
     lines = 2,
+    expanded: expandedProp,
+    showToggle = true,
+    onToggle,
   }: {
     text: string;
     lines?: number;
+    expanded?: boolean;
+    showToggle?: boolean;
+    onToggle?: () => void;
   } = $props();
 
-  let expanded = $state(false);
+  let expandedInternal = $state(false);
   let isTruncatable = $state(false);
   let textEl = $state<HTMLParagraphElement | undefined>();
+
+  const expanded = $derived(expandedProp ?? expandedInternal);
+  const controlled = $derived(expandedProp !== undefined);
 
   const fullText = $derived(text);
   const clampedText = $derived(
@@ -39,7 +48,13 @@
   function toggle(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
-    expanded = !expanded;
+    if (onToggle) {
+      onToggle();
+      return;
+    }
+    if (!controlled) {
+      expandedInternal = !expandedInternal;
+    }
   }
 </script>
 
@@ -53,7 +68,7 @@
     >
       {displayText}
     </p>
-    {#if isTruncatable || expanded}
+    {#if showToggle && (controlled || isTruncatable || expanded)}
       <p class="toggle-line">
         (<button type="button" class="toggle" onclick={toggle}
           >{expanded ? "less" : "more"}</button

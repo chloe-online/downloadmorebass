@@ -11,14 +11,18 @@
     "build": "vite build",
     "preview": "npm run build && wrangler dev",
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && npm run check --workspace=worker",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "announce": "tsx scripts/announce.ts",
+    "announce:test": "tsx scripts/announce.ts --title test --url http://localhost:5173/listen?v=please-dont-look --api http://localhost:5173"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.44.0",
     "@sveltejs/vite-plugin-svelte": "^6.1.1",
     "@tsconfig/svelte": "^5.0.4",
+    "@types/node": "^26.1.1",
     "svelte": "^5.38.1",
     "svelte-check": "^4.3.1",
+    "tsx": "^4.20.3",
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
     "wrangler": "^4.110.0"

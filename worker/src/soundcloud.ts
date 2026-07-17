@@ -2,14 +2,12 @@ import type {
   ArtistProfile,
   Comment,
   Track,
+  TracksResponse,
   WebProfile,
 } from "../../shared/types";
+import type { Env } from "./env";
 
-export interface Env {
-  SOUNDCLOUD_CLIENT_ID: string;
-  SOUNDCLOUD_CLIENT_SECRET: string;
-  SOUNDCLOUD_USER: string;
-}
+export type { Env };
 
 interface TokenResponse {
   access_token: string;
@@ -50,6 +48,8 @@ interface SoundCloudTrack {
   permalink_url: string;
   artwork_url: string | null;
   created_at: string;
+  genre?: string | null;
+  tag_list?: string | null;
   user: {
     username: string;
     permalink_url: string;
@@ -73,40 +73,161 @@ interface PaginatedCollection<T> {
   next_href?: string | null;
 }
 
-let cachedToken: { accessToken: string; expiresAt: number } | null = null;
+interface CachedToken {
+  accessToken: string;
+  refreshToken: string | null;
+  expiresAt: number;
+}
 
-async function getAccessToken(env: Env): Promise<string> {
-  const now = Date.now();
-  if (cachedToken && cachedToken.expiresAt > now + 60_000) {
-    return cachedToken.accessToken;
+interface StoredTokenRow {
+  access_token: string;
+  refresh_token: string | null;
+  expires_at: number;
+}
+
+let cachedToken: CachedToken | null = null;
+let tokenInFlight: Promise<string> | null = null;
+
+function isTokenFresh(expiresAt: number, now = Date.now()): boolean {
+  return expiresAt > now + 60_000;
+}
+
+function setCachedToken(token: CachedToken): string {
+  cachedToken = token;
+  return token.accessToken;
+}
+
+async function loadStoredToken(env: Env): Promise<CachedToken | null> {
+  const row = await env.DB.prepare(
+    `SELECT access_token, refresh_token, expires_at FROM soundcloud_tokens WHERE id = 1`,
+  ).first<StoredTokenRow>();
+
+  if (!row) {
+    return null;
   }
 
-  const credentials = btoa(
-    `${env.SOUNDCLOUD_CLIENT_ID}:${env.SOUNDCLOUD_CLIENT_SECRET}`,
-  );
+  return {
+    accessToken: row.access_token,
+    refreshToken: row.refresh_token,
+    expiresAt: row.expires_at,
+  };
+}
+
+async function saveStoredToken(env: Env, token: CachedToken): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO soundcloud_tokens (id, access_token, refresh_token, expires_at)
+     VALUES (1, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       access_token = excluded.access_token,
+       refresh_token = excluded.refresh_token,
+       expires_at = excluded.expires_at`,
+  )
+    .bind(token.accessToken, token.refreshToken, token.expiresAt)
+    .run();
+}
+
+async function exchangeToken(
+  env: Env,
+  body: URLSearchParams,
+  auth?: "basic",
+): Promise<CachedToken> {
+  const headers: Record<string, string> = {
+    accept: "application/json; charset=utf-8",
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+
+  if (auth === "basic") {
+    headers.Authorization = `Basic ${btoa(
+      `${env.SOUNDCLOUD_CLIENT_ID}:${env.SOUNDCLOUD_CLIENT_SECRET}`,
+    )}`;
+  }
 
   const response = await fetch("https://secure.soundcloud.com/oauth/token", {
     method: "POST",
-    headers: {
-      accept: "application/json; charset=utf-8",
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${credentials}`,
-    },
-    body: new URLSearchParams({ grant_type: "client_credentials" }),
+    headers,
+    body,
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`SoundCloud auth failed (${response.status}): ${body}`);
+    const errorBody = await response.text();
+    throw new Error(`SoundCloud auth failed (${response.status}): ${errorBody}`);
   }
 
   const data = (await response.json()) as TokenResponse;
-  cachedToken = {
+  return {
     accessToken: data.access_token,
-    expiresAt: now + data.expires_in * 1000,
+    refreshToken: data.refresh_token ?? null,
+    expiresAt: Date.now() + data.expires_in * 1000,
   };
+}
 
-  return data.access_token;
+async function requestClientCredentials(env: Env): Promise<CachedToken> {
+  return exchangeToken(
+    env,
+    new URLSearchParams({ grant_type: "client_credentials" }),
+    "basic",
+  );
+}
+
+async function requestRefreshToken(
+  env: Env,
+  refreshToken: string,
+): Promise<CachedToken> {
+  return exchangeToken(
+    env,
+    new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: env.SOUNDCLOUD_CLIENT_ID,
+      client_secret: env.SOUNDCLOUD_CLIENT_SECRET,
+      refresh_token: refreshToken,
+    }),
+  );
+}
+
+async function getAccessToken(env: Env): Promise<string> {
+  if (cachedToken && isTokenFresh(cachedToken.expiresAt)) {
+    return cachedToken.accessToken;
+  }
+
+  if (tokenInFlight) {
+    return tokenInFlight;
+  }
+
+  tokenInFlight = (async () => {
+    try {
+      if (cachedToken && isTokenFresh(cachedToken.expiresAt)) {
+        return cachedToken.accessToken;
+      }
+
+      const stored = await loadStoredToken(env);
+      if (stored && isTokenFresh(stored.expiresAt)) {
+        return setCachedToken(stored);
+      }
+
+      if (stored?.refreshToken) {
+        try {
+          const refreshed = await requestRefreshToken(env, stored.refreshToken);
+          await saveStoredToken(env, refreshed);
+          return setCachedToken(refreshed);
+        } catch (error) {
+          // Another isolate may have already consumed the single-use refresh token.
+          const raced = await loadStoredToken(env);
+          if (raced && isTokenFresh(raced.expiresAt)) {
+            return setCachedToken(raced);
+          }
+          console.error("SoundCloud token refresh failed, falling back:", error);
+        }
+      }
+
+      const minted = await requestClientCredentials(env);
+      await saveStoredToken(env, minted);
+      return setCachedToken(minted);
+    } finally {
+      tokenInFlight = null;
+    }
+  })();
+
+  return tokenInFlight;
 }
 
 async function soundCloudFetch<T>(env: Env, path: string): Promise<T> {
@@ -200,6 +321,29 @@ function calculateStars(likes: number, listens: number): number {
   // 1 like per 10 listens = 5 stars
   const stars = Math.round((likes / listens) * 50);
   return Math.min(5, Math.max(0, stars));
+}
+
+/** Parse SoundCloud's space/quote-delimited tag_list into unique tags. */
+function parseTagList(tagList: string): string[] {
+  const tags: string[] = [];
+  const seen = new Set<string>();
+  const pattern = /"([^"]+)"|(\S+)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(tagList)) !== null) {
+    const raw = (match[1] ?? match[2] ?? "").trim();
+    if (!raw) {
+      continue;
+    }
+    const key = raw.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    tags.push(raw);
+  }
+
+  return tags;
 }
 
 function formatAvatarUrl(avatarUrl: string | null): string {
@@ -303,26 +447,69 @@ function toTrack(track: SoundCloudTrack): Track {
     stars: calculateStars(likes, listens),
     isNew: isRecentlyCreated(track.created_at),
     publishedAt: track.created_at,
+    genre: track.genre?.trim() ?? "",
+    tags: parseTagList(track.tag_list ?? ""),
   };
 }
 
-export async function fetchUserTracks(env: Env) {
-  const user = await resolveUser(env, env.SOUNDCLOUD_USER);
-  const [rawTracks, rawWebProfiles] = await Promise.all([
-    fetchAllUserTracks(env, user.id),
-    fetchUserWebProfiles(env, user.id),
-  ]);
+async function loadTracksCache(env: Env): Promise<TracksResponse | null> {
+  const row = await env.DB.prepare(
+    `SELECT payload FROM soundcloud_tracks_cache WHERE soundcloud_user = ?`,
+  )
+    .bind(env.SOUNDCLOUD_USER)
+    .first<{ payload: string }>();
 
-  console.log(user);
+  if (!row) {
+    return null;
+  }
 
-  return {
-    user: toArtistProfile(
-      user,
-      rawTracks.length,
-      buildWebProfiles(user, rawWebProfiles),
-    ),
-    tracks: rawTracks.map(toTrack),
-  };
+  try {
+    return JSON.parse(row.payload) as TracksResponse;
+  } catch {
+    return null;
+  }
+}
+
+async function saveTracksCache(
+  env: Env,
+  data: TracksResponse,
+): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO soundcloud_tracks_cache (soundcloud_user, payload, updated_at)
+     VALUES (?, ?, datetime('now'))
+     ON CONFLICT(soundcloud_user) DO UPDATE SET
+       payload = excluded.payload,
+       updated_at = excluded.updated_at`,
+  )
+    .bind(env.SOUNDCLOUD_USER, JSON.stringify(data))
+    .run();
+}
+
+export async function fetchUserTracks(env: Env): Promise<TracksResponse> {
+  try {
+    const user = await resolveUser(env, env.SOUNDCLOUD_USER);
+    const [rawTracks, rawWebProfiles] = await Promise.all([
+      fetchAllUserTracks(env, user.id),
+      fetchUserWebProfiles(env, user.id),
+    ]);
+    const data: TracksResponse = {
+      user: toArtistProfile(
+        user,
+        rawTracks.length,
+        buildWebProfiles(user, rawWebProfiles),
+      ),
+      tracks: rawTracks.map(toTrack),
+    };
+    await saveTracksCache(env, data);
+    return data;
+  } catch (error) {
+    const cached = await loadTracksCache(env);
+    if (cached) {
+      console.error("SoundCloud tracks fetch failed, serving cache:", error);
+      return cached;
+    }
+    throw error;
+  }
 }
 
 async function fetchAllTrackComments(

@@ -1,16 +1,18 @@
 <script lang="ts">
   import SoundCloudPlayer from "../components/SoundCloudPlayer.svelte";
   import Comments from "../components/Comments.svelte";
-  import ArtistProfileBar from "../components/ArtistProfileBar.svelte";
   import ExpandableText from "../components/ExpandableText.svelte";
+  import SubscribeButton from "../components/SubscribeButton.svelte";
   import WatchPageSkeleton from "../components/WatchPageSkeleton.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import Song from "../components/Song.svelte";
+  import ErrorPanel from "../components/ErrorPanel.svelte";
   import { fetchComments } from "../lib/api";
   import { navigate, listenPath, homePath } from "../lib/router";
   import { findTrackBySlug, getTracks, trackSlug } from "../lib/tracks";
   import { playBassTone } from "../lib/bass";
+  import { formatFullDate, formatRelativeDate } from "../lib/dates";
   import type { ArtistProfile, Comment, Track } from "../../shared/types";
 
   let { slug }: { slug: string | null } = $props();
@@ -18,22 +20,57 @@
   let track = $state<Track | undefined>();
   let artistProfile = $state<ArtistProfile | undefined>();
   let relatedTracks = $state<Track[]>([]);
+  let sameGenreTracks = $state<Track[]>([]);
   let comments = $state<Comment[]>([]);
   let loading = $state(true);
   let commentsLoading = $state(false);
   let error = $state<string | null>(null);
   let commentsError = $state<string | null>(null);
-  let shareCopied = $state(false);
-  let shareResetTimeout: ReturnType<typeof setTimeout> | null = null;
   let moreBassExpanded = $state(false);
+  let sameGenreExpanded = $state(false);
+  let trackInfoExpanded = $state(false);
+  let reloadToken = $state(0);
+
+  const isNotFound = $derived(
+    error === "Track not found." ||
+      error === "No track selected." ||
+      (!loading && !track && !error),
+  );
+
+  function applySidebarDefaults() {
+    const desktop = !window.matchMedia("(max-width: 768px)").matches;
+    moreBassExpanded = desktop;
+    sameGenreExpanded = desktop;
+  }
 
   $effect(() => {
     slug;
-    moreBassExpanded = false;
+    trackInfoExpanded = false;
+    applySidebarDefaults();
+
+    const mq = window.matchMedia("(max-width: 768px)");
+    const onViewportChange = () => applySidebarDefaults();
+    mq.addEventListener("change", onViewportChange);
+    return () => mq.removeEventListener("change", onViewportChange);
   });
 
   function toggleMoreBass() {
     moreBassExpanded = !moreBassExpanded;
+  }
+
+  function toggleSameGenre() {
+    sameGenreExpanded = !sameGenreExpanded;
+  }
+
+  function toggleTrackInfo() {
+    trackInfoExpanded = !trackInfoExpanded;
+  }
+
+  function handleTrackInfoKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleTrackInfo();
+    }
   }
 
   function goHome(event: MouseEvent) {
@@ -46,40 +83,19 @@
     navigate(listenPath(relatedSlug));
   }
 
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  }
-
-  async function shareTrack() {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      shareCopied = true;
-
-      if (shareResetTimeout) {
-        clearTimeout(shareResetTimeout);
-      }
-
-      shareResetTimeout = setTimeout(() => {
-        shareCopied = false;
-        shareResetTimeout = null;
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to copy share URL:", err);
-    }
+  function retryLoad() {
+    reloadToken += 1;
   }
 
   $effect(() => {
     const currentSlug = slug;
+    reloadToken;
     window.scrollTo({ top: 0 });
     loading = true;
     error = null;
     track = undefined;
     relatedTracks = [];
-    shareCopied = false;
+    sameGenreTracks = [];
 
     if (!currentSlug) {
       error = "No track selected.";
@@ -95,9 +111,22 @@
 
         track = findTrackBySlug(currentSlug);
         artistProfile = data.user;
-        relatedTracks = data.tracks.filter(
+
+        const genreKey = track?.genre.trim().toLowerCase() ?? "";
+        const others = data.tracks.filter(
           (item) => trackSlug(item.url) !== currentSlug,
         );
+
+        sameGenreTracks = genreKey
+          ? others.filter(
+              (item) => item.genre.trim().toLowerCase() === genreKey,
+            )
+          : [];
+        relatedTracks = genreKey
+          ? others.filter(
+              (item) => item.genre.trim().toLowerCase() !== genreKey,
+            )
+          : others;
 
         if (!track) {
           error = "Track not found.";
@@ -161,8 +190,25 @@
     {#if loading}
       <WatchPageSkeleton />
     {:else if error || !track}
-      <p class="status error">{error ?? "Track not found."}</p>
-      <button class="yt-button" onclick={goHome}>Go home</button>
+      <div class="watch-error">
+        {#if isNotFound}
+          <ErrorPanel
+            title="Oops, track not found."
+            message="This track doesn't exist (or maybe it never did). Head home to find more bass."
+            contactPrompt="Think this is a bug?"
+            actionLabel="Go home"
+            actionHref={homePath()}
+            onAction={goHome}
+          />
+        {:else}
+          <ErrorPanel
+            title="Oh uh, something went wrong."
+            message="I'm sorry, but an error occurred while loading this track. Please try again in a bit."
+            actionLabel="Try again"
+            onAction={retryLoad}
+          />
+        {/if}
+      </div>
     {:else}
       <div class="watch-layout">
         <section class="primary">
@@ -175,38 +221,150 @@
             />
           </div>
 
-          <h1 class="video-title">
-            <span class="title-text">
-              {track.title} -
-              <a href={track.artistUrl} target="_blank" rel="noreferrer"
-                >{track.artist}</a
-              >
-            </span>
-            <span class="views">{track.listens.toLocaleString()} listens</span>
-          </h1>
+          <h1 class="video-title">{track.title}</h1>
 
-          <div class="meta-bar">
-            <span class="rating">
-              {#each Array(5) as _, i}
-                <span class:filled={i < track.stars}>★</span>
-              {/each}
-            </span>
-            <span class="separator">|</span>
-            <span class="likes">{track.likes.toLocaleString()} likes</span>
-            {#if track.publishedAt}
-              <span class="separator">|</span>
-              <span class="published"
-                >Released on {formatDate(track.publishedAt)}</span
-              >
-            {/if}
+          <div class="song-info">
+            <div class="uploader-box">
+              {#if artistProfile}
+                <div class="artist-row">
+                  {#if artistProfile.avatarUrl}
+                    <a
+                      class="artist-avatar-link"
+                      href={artistProfile.permalinkUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <img
+                        class="artist-avatar"
+                        src={artistProfile.avatarUrl}
+                        alt={artistProfile.username}
+                      />
+                    </a>
+                  {:else}
+                    <span class="artist-avatar-fallback"
+                      >{artistProfile.username.slice(0, 1).toUpperCase()}</span
+                    >
+                  {/if}
+
+                  <div class="artist-info">
+                    <a
+                      href={artistProfile.permalinkUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span class="username">{artistProfile.username}</span>
+                    </a>
+                    <span class="followers">
+                      Followers: {artistProfile.followersCount.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <SubscribeButton
+                    inputId="watch-subscribe-email"
+                    resetKey={slug}
+                  />
+                </div>
+              {/if}
+            </div>
+
+            <div class="rating-wrap">
+              <span class="rating">
+                {#each Array(5) as _, i}
+                  <span class:filled={i < track.stars}>★</span>
+                {/each}
+              </span>
+              <!-- removing the likes label for now -->
+              <!-- <span class="rating-label"
+                >Likes: {track.likes.toLocaleString()}</span
+              > -->
+            </div>
           </div>
 
-          <div class="uploader-box"></div>
-
-          <ExpandableText
-            text={track.description || "No description provided."}
-            lines={3}
-          />
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <div
+            class="track-info"
+            class:expanded={trackInfoExpanded}
+            role="button"
+            tabindex="0"
+            aria-expanded={trackInfoExpanded}
+            onclick={toggleTrackInfo}
+            onkeydown={handleTrackInfoKeydown}
+          >
+            <a
+              class="soundcloud-button"
+              href={track.url}
+              target="_blank"
+              rel="noreferrer"
+              onclick={(event) => event.stopPropagation()}
+            >
+              SoundCloud
+            </a>
+            <div class="track-info-header">
+              <span class="views">{track.listens.toLocaleString()} listens</span
+              >
+              {#if track.publishedAt}
+                <span class="published">
+                  {#if trackInfoExpanded}
+                    Released on {formatFullDate(track.publishedAt)}
+                  {:else}
+                    {formatRelativeDate(track.publishedAt)}
+                  {/if}
+                </span>
+              {/if}
+            </div>
+            <ExpandableText
+              text={track.description || "No description provided."}
+              lines={3}
+              expanded={trackInfoExpanded}
+              showToggle={false}
+              onToggle={toggleTrackInfo}
+            />
+            {#if trackInfoExpanded && (track.genre || track.tags.length > 0)}
+              <div class="track-meta">
+                {#if track.genre}
+                  <p class="track-meta-row">
+                    <span class="track-meta-label">Genre:</span>
+                    <a
+                      class="track-tag track-tag--genre"
+                      href={homePath(track.genre)}
+                      onclick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        navigate(homePath(track?.genre ?? "all"));
+                      }}>{track.genre}</a
+                    >
+                  </p>
+                {/if}
+                {#if track.tags.length > 0}
+                  <div class="track-meta-row">
+                    <span class="track-meta-label">Tags:</span>
+                    {#each track.tags as tag (tag)}
+                      <a
+                        class="track-tag"
+                        href={homePath(tag)}
+                        onclick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          navigate(homePath(tag));
+                        }}>{tag}</a
+                      >
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+            <p class="track-info-toggle-line">
+              (<button
+                type="button"
+                class="track-info-toggle"
+                onclick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  toggleTrackInfo();
+                }}>{trackInfoExpanded ? "less" : "more"}</button
+              >)
+            </p>
+          </div>
 
           <Comments
             {comments}
@@ -217,63 +375,127 @@
         </section>
 
         <aside class="sidebar">
-          {#if artistProfile}
-            <ArtistProfileBar profile={artistProfile} />
-          {/if}
-          <div class="more-bass" class:expanded={moreBassExpanded}>
-            <button
-              type="button"
-              class="sidebar-title more-bass-toggle"
-              aria-expanded={moreBassExpanded}
-              onclick={toggleMoreBass}
-            >
-              <span>More bass</span>
-              <span class="more-bass-hint"
-                >{moreBassExpanded ? "less" : "more"}</span
+          {#if sameGenreTracks.length > 0}
+            <div class="sidebar-section" class:expanded={sameGenreExpanded}>
+              <button
+                type="button"
+                class="sidebar-title sidebar-section-toggle"
+                aria-expanded={sameGenreExpanded}
+                onclick={toggleSameGenre}
               >
-            </button>
-            <div class="more-bass-body">
-              <ul class="related-list related-list--desktop">
-                {#each relatedTracks as related (related.url)}
-                  {@const relatedSlug = trackSlug(related.url)}
-                  <li>
-                    <a
-                      class="related-item"
-                      href={listenPath(relatedSlug)}
-                      onclick={(event) => openTrack(event, relatedSlug)}
-                    >
-                      <img src={related.cover} alt={related.title} />
-                      <div class="related-info">
-                        <span class="related-title">{related.title}</span>
-                        <span class="related-meta"
-                          >{related.artist} · {related.listens.toLocaleString()} listens</span
-                        >
-                        <span class="related-duration">{related.duration}</span>
-                      </div>
-                    </a>
-                  </li>
-                {/each}
-              </ul>
-              <ul class="related-list related-list--mobile">
-                {#each relatedTracks as related (related.url)}
-                  <li>
-                    <Song
-                      cover={related.cover}
-                      title={related.title}
-                      description={related.description}
-                      duration={related.duration}
-                      artist={related.artist}
-                      listens={related.listens}
-                      artistUrl={related.artistUrl}
-                      url={related.url}
-                      stars={related.stars}
-                      isNew={related.isNew}
-                    />
-                  </li>
-                {/each}
-              </ul>
+                <span>More {track?.genre ?? "genre"}</span>
+                <span class="sidebar-section-hint"
+                  >{sameGenreExpanded ? "less" : "more"}</span
+                >
+              </button>
+              <div class="sidebar-section-body">
+                <ul class="related-list related-list--desktop">
+                  {#each sameGenreTracks as related (related.url)}
+                    {@const relatedSlug = trackSlug(related.url)}
+                    <li>
+                      <a
+                        class="related-item"
+                        href={listenPath(relatedSlug)}
+                        onclick={(event) => openTrack(event, relatedSlug)}
+                      >
+                        <img src={related.cover} alt={related.title} />
+                        <div class="related-info">
+                          <span class="related-title">{related.title}</span>
+                          <span class="related-meta"
+                            >{related.artist} · {related.listens.toLocaleString()}
+                            listens</span
+                          >
+                          <span class="related-duration"
+                            >{related.duration}</span
+                          >
+                        </div>
+                      </a>
+                    </li>
+                  {/each}
+                </ul>
+                <ul class="related-list related-list--mobile">
+                  {#each sameGenreTracks as related (related.url)}
+                    <li>
+                      <Song
+                        cover={related.cover}
+                        title={related.title}
+                        description={related.description}
+                        duration={related.duration}
+                        artist={related.artist}
+                        listens={related.listens}
+                        artistUrl={related.artistUrl}
+                        url={related.url}
+                        stars={related.stars}
+                        genre={related.genre}
+                        isNew={related.isNew}
+                      />
+                    </li>
+                  {/each}
+                </ul>
+              </div>
             </div>
-          </div>
+          {/if}
+
+          {#if relatedTracks.length > 0}
+            <div class="sidebar-section" class:expanded={moreBassExpanded}>
+              <button
+                type="button"
+                class="sidebar-title sidebar-section-toggle"
+                aria-expanded={moreBassExpanded}
+                onclick={toggleMoreBass}
+              >
+                <span>More bass</span>
+                <span class="sidebar-section-hint"
+                  >{moreBassExpanded ? "less" : "more"}</span
+                >
+              </button>
+              <div class="sidebar-section-body">
+                <ul class="related-list related-list--desktop">
+                  {#each relatedTracks as related (related.url)}
+                    {@const relatedSlug = trackSlug(related.url)}
+                    <li>
+                      <a
+                        class="related-item"
+                        href={listenPath(relatedSlug)}
+                        onclick={(event) => openTrack(event, relatedSlug)}
+                      >
+                        <img src={related.cover} alt={related.title} />
+                        <div class="related-info">
+                          <span class="related-title">{related.title}</span>
+                          <span class="related-meta"
+                            >{related.artist} · {related.listens.toLocaleString()}
+                            listens</span
+                          >
+                          <span class="related-duration"
+                            >{related.duration}</span
+                          >
+                        </div>
+                      </a>
+                    </li>
+                  {/each}
+                </ul>
+                <ul class="related-list related-list--mobile">
+                  {#each relatedTracks as related (related.url)}
+                    <li>
+                      <Song
+                        cover={related.cover}
+                        title={related.title}
+                        description={related.description}
+                        duration={related.duration}
+                        artist={related.artist}
+                        listens={related.listens}
+                        artistUrl={related.artistUrl}
+                        url={related.url}
+                        stars={related.stars}
+                        genre={related.genre}
+                        isNew={related.isNew}
+                      />
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            </div>
+          {/if}
         </aside>
         <div class="subwoofer-footer">
           {#each Array(3) as _, i (i)}
@@ -312,13 +534,138 @@
     padding: 1rem;
   }
 
-  .status {
-    font-family: Arial, sans-serif;
-    font-size: 14px;
+  .track-info {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    min-width: 0;
+    margin-top: 0.5rem;
+    background: #ddd;
+    border: 1px solid #999;
+    padding: 0.5rem;
+    cursor: pointer;
+    text-align: left;
   }
 
-  .status.error {
-    color: #b00020;
+  .track-info:focus-visible {
+    outline: 2px solid #03c;
+    outline-offset: 1px;
+  }
+
+  .soundcloud-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #03c;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .soundcloud-button:hover {
+    text-decoration: underline;
+  }
+
+  .track-info-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    min-width: 0;
+    padding-right: 5.5rem;
+  }
+  .views {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .published {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .track-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .track-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.5rem;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .track-meta-label {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.25;
+  }
+
+  .track-tag {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #03c;
+    text-decoration: none;
+    line-height: 1.25;
+  }
+
+  .track-tag:hover {
+    text-decoration: underline;
+  }
+
+  .track-tag--genre {
+    font-weight: bold;
+    color: #333;
+  }
+
+  .track-tag--genre:hover {
+    color: #03c;
+  }
+
+  .track-info-toggle-line {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .track-info-toggle {
+    display: inline;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: bold;
+    color: #03c;
+    cursor: pointer;
+    text-decoration: dotted underline;
+  }
+
+  .track-info-toggle:hover {
+    text-decoration: underline;
+  }
+
+  .watch-error {
+    width: 100%;
+    max-width: var(--song-max);
   }
 
   .watch-layout {
@@ -358,31 +705,59 @@
     margin-bottom: 0.75rem;
   }
 
-  .video-title {
+  .song-info {
     display: flex;
+    flex-direction: row;
+    align-items: flex-start;
     justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
+    gap: 0.5rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .video-title {
     font-family: Arial, sans-serif;
     font-size: 20px;
     font-weight: bold;
-    margin: 0 0 0.5rem;
     line-height: 1.2;
     text-align: left;
+    margin: 0 0 0.5rem;
   }
 
-  .video-title .title-text {
+  .artist-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.6rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .artist-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.25rem;
     min-width: 0;
   }
 
-  .video-title .views {
-    flex-shrink: 0;
-    font-weight: normal;
-    white-space: nowrap;
+  .artist-info a {
+    text-decoration: none;
+    line-height: 1;
   }
 
-  .video-title a {
-    font-weight: semibold;
+  .username {
+    display: block;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #03c;
+    line-height: 1;
+  }
+
+  .artist-info a:hover .username {
+    text-decoration: underline;
   }
 
   .meta-bar {
@@ -403,34 +778,91 @@
   }
 
   .rating {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0;
+    margin: 0;
+    padding: 0;
     color: #ccc;
-    letter-spacing: 1px;
-    /* font-size: 24px; */
+    letter-spacing: 0;
+    font-size: 24px;
+    line-height: 0.7;
+    height: 0.7em;
+    overflow: hidden;
+  }
+
+  .rating span {
+    display: block;
+    margin: 0;
+    padding: 0;
+    line-height: 0.7;
+    height: 0.7em;
+    overflow: hidden;
   }
 
   .rating .filled {
     color: #c00;
   }
 
+  .rating-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    line-height: 1;
+  }
+
+  .rating-label {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+  }
+
   .uploader-box {
     font-family: Arial, sans-serif;
     font-size: 13px;
-    margin-bottom: 0.75rem;
+    margin: 0;
+    padding: 0;
   }
 
-  .uploader-box .label {
-    color: #666;
-    margin-right: 0.25rem;
+  .artist-avatar-link {
+    display: block;
+    flex-shrink: 0;
+    line-height: 0;
   }
 
-  .uploader-box a {
-    color: #03c;
+  .artist-avatar,
+  .artist-avatar-fallback {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #999;
+    border-radius: 2px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .artist-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ddd;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
     font-weight: bold;
-    text-decoration: none;
+    color: #333;
   }
 
-  .uploader-box a:hover {
-    text-decoration: underline;
+  .followers {
+    min-width: 0;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.2;
+    color: #666;
   }
 
   .new-tag {
@@ -477,29 +909,39 @@
     color: #333;
   }
 
-  .more-bass-toggle {
+  .sidebar-section-toggle {
     display: flex;
     align-items: baseline;
-    justify-content: flex-start;
+    justify-content: space-between;
     gap: 0.5rem;
     width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 0.5rem 0;
     border: none;
+    border-bottom: 1px solid #ccc;
     background: none;
-    cursor: default;
-    pointer-events: none;
+    cursor: pointer;
   }
 
-  .more-bass-hint {
-    display: none;
+  .sidebar-section-hint {
+    display: inline;
     font-size: 12px;
     color: #03c;
     text-decoration: none;
   }
 
-  .more-bass-body {
+  .sidebar-section-hint:hover,
+  .sidebar-section-toggle:hover .sidebar-section-hint {
+    text-decoration: underline;
+  }
+
+  .sidebar-section:not(.expanded) .sidebar-section-body {
+    display: none;
+  }
+
+  .sidebar-section.expanded .sidebar-section-body {
     display: block;
+    padding-top: 0.5rem;
   }
 
   .related-list {
@@ -555,24 +997,6 @@
     font-family: Arial, sans-serif;
     font-size: 11px;
     color: #666;
-  }
-  :global(.yt-button),
-  .yt-button {
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
-    border: 1px solid #d3d3d3;
-    border-radius: 3px;
-    cursor: pointer;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-    padding: 4px 10px;
-    text-decoration: none;
-    display: inline-block;
   }
 
   .subwoofer-footer {
@@ -644,32 +1068,6 @@
 
     .related-list--mobile li:not(:first-child) {
       border-top: 1px dotted #bbb;
-    }
-
-    .more-bass-toggle {
-      cursor: pointer;
-      pointer-events: auto;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .more-bass-hint {
-      display: inline;
-    }
-
-    .more-bass-hint:hover,
-    .more-bass-toggle:hover .more-bass-hint {
-      text-decoration: underline;
-    }
-
-    .more-bass:not(.expanded) .more-bass-body {
-      display: none;
-    }
-
-    .more-bass.expanded .more-bass-body {
-      display: block;
-      padding-top: 0.5rem;
     }
 
     .subwoofer-footer {

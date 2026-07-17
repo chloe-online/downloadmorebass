@@ -87,9 +87,7 @@
     font-size: 1.25rem;
     font-weight: 900;
     color: #333;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
+    background: transparent url(/ui-sprite.webp) no-repeat scroll 0 -137px;
     border: 1px solid #d3d3d3;
     border-radius: 3px;
     cursor: pointer;

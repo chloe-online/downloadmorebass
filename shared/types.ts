@@ -32,6 +32,8 @@ export interface Track {
   stars: number;
   isNew: boolean;
   publishedAt: string;
+  genre: string;
+  tags: string[];
 }
 
 export interface Comment {
@@ -58,4 +60,34 @@ export interface TracksResponse {
 export interface StreamResponse {
   url: string;
   format: "mp3" | "hls";
+}
+
+export interface SubscribeRequest {
+  email: string;
+  turnstileToken: string;
+  website?: string;
+}
+
+export interface SubscribeResponse {
+  ok: true;
+}
+
+export interface UnsubscribeRequest {
+  token: string;
+}
+
+export interface UnsubscribeResponse {
+  ok: true;
+}
+
+export interface AnnounceRequest {
+  subject?: string;
+  title: string;
+  url: string;
+  message?: string;
+}
+
+export interface AnnounceResponse {
+  sent: number;
+  failed: number;
 }

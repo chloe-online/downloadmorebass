@@ -1,17 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Song from "../components/Song.svelte";
-  import SongSkeleton from "../components/SongSkeleton.svelte";
   import SearchResults from "../components/SearchResults.svelte";
+  import HomePageSkeleton from "../components/HomePageSkeleton.svelte";
   import SiteMainBar from "../components/SiteMainBar.svelte";
+  import FeaturedArtistSection from "../components/FeaturedArtistSection.svelte";
+  import PopularTagsSection from "../components/PopularTagsSection.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
+  import ErrorPanel from "../components/ErrorPanel.svelte";
   import { getTracks } from "../lib/tracks";
-  import {
-    getLocation,
-    subscribe,
-    type Location,
-  } from "../lib/router";
+  import { getLocation, subscribe, type Location } from "../lib/router";
   import type { ArtistProfile, Track } from "../../shared/types";
 
   type SortMode = "featured" | "popular" | "listened";
@@ -165,94 +164,70 @@
   <SiteHeader />
 
   <div class="container">
-    <div class="home-layout">
-      <div class="tracks-column">
-        {#if showTracksError}
-          <div class="tracks-error" role="alert">
-            <h2 class="tracks-error-title">Oh uh, something went wrong.</h2>
-            <p class="tracks-error-message">
-              I'm sorry, but an error occurred while loading the tracks. The
-              playlist should be back soon, please try again in a bit.
-            </p>
-            <div class="tracks-error-actions">
-              <button
-                type="button"
-                class="tracks-error-retry"
-                onclick={() => loadTracks()}
-              >
-                Try again
-              </button>
-              <p class="tracks-error-contact">
-                Still broken?
-                <a
-                  href="https://instagram.com/chloemusic8008"
-                  target="_blank"
-                  rel="noreferrer">Tell Chloe to fix it</a
-                >
-              </p>
-            </div>
-          </div>
-        {:else if searchQuery}
-          <SearchResults
-            tracks={tracks}
-            query={searchQuery}
-            loading={tracksLoading}
-          />
-        {:else}
-          <div class="playlist">
-            <div class="featured-songs">
-              <h2>Featured songs</h2>
-              <div class="featured-subtitle">
-                <div class="featured-subtitle-content">
-                  <p class="curator">Featured songs selected by:</p>
-                  <p class="curator">
-                    <a
-                      href="https://instagram.com/chloemusic8008"
-                      target="_blank"
-                      rel="noreferrer">@ChloeMusic8008</a
+    {#if tracksLoading}
+      <HomePageSkeleton searchQuery={searchQuery || null} />
+    {:else}
+      <div class="home-layout">
+        <div class="tracks-column">
+          {#if showTracksError}
+            <ErrorPanel
+              title="Oh uh, something went wrong."
+              message="I'm sorry, but an error occurred while loading the tracks. The playlist should be back soon, please try again in a bit."
+              actionLabel="Try again"
+              onAction={() => loadTracks()}
+            />
+          {:else if searchQuery}
+            <SearchResults {tracks} query={searchQuery} />
+          {:else}
+            <div class="playlist">
+              <div class="featured-songs">
+                <h2>Featured songs</h2>
+                <div class="featured-subtitle">
+                  <div class="featured-subtitle-content">
+                    <p class="curator">Featured songs selected by:</p>
+                    <p class="curator">
+                      <a
+                        href="https://instagram.com/chloemusic8008"
+                        target="_blank"
+                        rel="noreferrer">@ChloeMusic8008</a
+                      >
+                    </p>
+                  </div>
+                  <div class="sort-tabs" role="tablist" aria-label="Sort songs">
+                    <button
+                      type="button"
+                      role="tab"
+                      class="sort-tab"
+                      class:active={sortMode === "featured"}
+                      aria-selected={sortMode === "featured"}
+                      onclick={() => (sortMode = "featured")}
                     >
-                  </p>
-                </div>
-                <div class="sort-tabs" role="tablist" aria-label="Sort songs">
-                  <button
-                    type="button"
-                    role="tab"
-                    class="sort-tab"
-                    class:active={sortMode === "featured"}
-                    aria-selected={sortMode === "featured"}
-                    onclick={() => (sortMode = "featured")}
-                  >
-                    Featured
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    class="sort-tab"
-                    class:active={sortMode === "popular"}
-                    aria-selected={sortMode === "popular"}
-                    onclick={() => (sortMode = "popular")}
-                  >
-                    Popular
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    class="sort-tab"
-                    class:active={sortMode === "listened"}
-                    aria-selected={sortMode === "listened"}
-                    onclick={() => (sortMode = "listened")}
-                  >
-                    Most listened
-                  </button>
+                      Featured
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      class="sort-tab"
+                      class:active={sortMode === "popular"}
+                      aria-selected={sortMode === "popular"}
+                      onclick={() => (sortMode = "popular")}
+                    >
+                      Popular
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      class="sort-tab"
+                      class:active={sortMode === "listened"}
+                      aria-selected={sortMode === "listened"}
+                      onclick={() => (sortMode = "listened")}
+                    >
+                      Most listened
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <ul>
-              {#if tracksLoading}
-                {#each Array(10) as _, i (i)}
-                  <li><SongSkeleton /></li>
-                {/each}
-              {:else}
+              <ul>
                 {#each sortedTracks as track (track.url)}
                   <li>
                     <Song
@@ -265,25 +240,35 @@
                       artistUrl={track.artistUrl}
                       url={track.url}
                       stars={track.stars}
+                      genre={track.genre}
                       isNew={track.isNew}
                     />
                   </li>
                 {/each}
-              {/if}
-            </ul>
-            <div class="back-to-top-container">
-              <button class="back-to-top-button" onclick={goToTop}
-                >Back to top</button
-              >
+              </ul>
+              <div class="back-to-top-container">
+                <button class="back-to-top-button" onclick={goToTop}
+                  >Back to top</button
+                >
+              </div>
             </div>
-          </div>
-        {/if}
-      </div>
+          {/if}
+        </div>
 
-      <aside class="site-sidebar">
-        <SiteMainBar />
-      </aside>
-    </div>
+        <aside class="site-sidebar">
+          <SiteMainBar />
+          {#if artistProfile}
+            <div class="featured-artist-container">
+              <h2>Featured artist</h2>
+              <FeaturedArtistSection artist={artistProfile} />
+            </div>
+          {/if}
+          {#if tracks.length > 0}
+            <PopularTagsSection {tracks} />
+          {/if}
+        </aside>
+      </div>
+    {/if}
   </div>
 
   <SiteFooter />
@@ -328,8 +313,17 @@
     min-width: 0;
     width: 100%;
     display: flex;
+    flex-direction: column;
+    gap: 1rem;
     /* position: sticky; */
     top: 1rem;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: bold;
+    color: #333;
   }
 
   .playlist {
@@ -344,11 +338,6 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .featured-songs h2 {
-    margin: 0;
-    font-size: 19px;
   }
 
   .featured-subtitle {
@@ -410,64 +399,6 @@
     z-index: 1;
   }
 
-  .tracks-error {
-    border: 1px solid #999;
-    background: #f9f9f9;
-    padding: 1.25rem 1rem;
-    text-align: center;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .tracks-error-title {
-    margin: 0 0 0.75rem;
-    font-size: 19px;
-    font-weight: bold;
-    color: #333;
-  }
-
-  .tracks-error-message {
-    margin: 0 0 0.5rem;
-    font-size: 13px;
-    line-height: 1.4;
-    color: #333;
-  }
-
-  .tracks-error-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #ddd;
-  }
-
-  .tracks-error-retry {
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    color: #03c;
-    text-decoration: underline;
-    cursor: pointer;
-    background: #eee;
-    border: 1px solid #999;
-    border-radius: 3px;
-    padding: 6px 14px;
-    line-height: 1.2;
-  }
-
-  .tracks-error-retry:hover {
-    background: #f5f5f5;
-    text-decoration: none;
-  }
-
-  .tracks-error-contact {
-    margin: 0;
-    font-size: 12px;
-    color: #666;
-  }
-
   .playlist ul {
     list-style: none;
     margin: 0;
@@ -476,15 +407,11 @@
 
   .playlist ul li {
     padding-top: 8px;
-    padding-bottom: 2px; /* accounts for 2px border-bottom on song element  this shoulddddd be fixed but mehhhh */
+    padding-bottom: 8px;
   }
 
   .playlist ul li:not(:last-child) {
     border-bottom: 1px dotted #bbb;
-  }
-
-  .playlist ul li:not(:first-child) {
-    border-top: 1px dotted #bbb;
   }
 
   @media (max-width: 768px) {

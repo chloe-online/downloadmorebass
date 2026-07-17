@@ -2,13 +2,16 @@
   <div class="skeleton cover"></div>
 
   <div class="song-info">
-    <div class="skeleton line title"></div>
-    <div class="skeleton line text"></div>
-    <div class="skeleton line text"></div>
-    <div class="skeleton line short"></div>
+    <div class="song-info-content">
+      <div class="skeleton line title"></div>
+      <div class="skeleton line text"></div>
+      <div class="skeleton line text"></div>
+      <div class="skeleton line short"></div>
+    </div>
+    <div class="skeleton line time"></div>
   </div>
 
-  <div class="artist-details">
+  <div class="song-details">
     <div class="skeleton line from"></div>
     <div class="skeleton line listens"></div>
     <div class="stars">
@@ -16,7 +19,6 @@
         <div class="skeleton star"></div>
       {/each}
     </div>
-    <div class="skeleton line duration"></div>
   </div>
 </article>
 
@@ -24,89 +26,98 @@
   .song-card {
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 8px;
   }
 
   .cover {
     width: 100px;
     height: 100px;
-    border: 1px solid #ccc;
+    border: 1px solid #000;
+    border-radius: 1px;
     flex-shrink: 0;
   }
 
   .song-info {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    align-items: start;
     flex: 1;
     min-width: 0;
-    padding-top: 5px;
+    gap: 0;
   }
 
-  .artist-details {
+  .song-info-content {
     display: flex;
     flex-direction: column;
-    align-items: start;
-    margin-left: 5px;
-    padding-left: 5px;
-    border-left: 1px solid #bbb;
-    flex-shrink: 0;
-    width: 120px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0;
+    width: 100%;
   }
 
-  .line {
-    height: 12px;
-    width: 70%;
-    background-color: #f0f0f0;
+  .song-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 120px;
+    height: 100%;
+    margin-left: 5px;
+    padding-left: 5px;
+    flex-shrink: 0;
+    gap: 0;
   }
 
   .line.title {
-    height: 14px;
+    height: calc(14px * 1.5);
     width: 100%;
+    margin: 0;
   }
 
   .line.text {
+    height: calc(12px * 1.5);
     width: 100%;
-    margin: 5px 0 0 5px;
+    margin: 0;
   }
 
   .line.short {
+    height: calc(12px * 1.5);
     width: 55%;
-    margin: 5px;
+    margin: 0;
   }
 
-  .artist-details .line {
-    margin: 5px;
-    height: 14px;
+  .line.time {
+    height: calc(12px * 1.5);
+    width: 4.5rem;
+    margin-top: auto;
   }
 
-  .artist-details .from {
+  .line.from {
+    height: calc(12px * 1.5);
     width: 90%;
+    margin: 0;
   }
 
-  .artist-details .listens {
+  .line.listens {
+    height: calc(12px * 1.5);
     width: 70%;
+    margin: 0;
   }
 
   .stars {
     display: flex;
     flex-direction: row;
     gap: 2px;
-    margin: 5px;
-    padding: 6px 0;
-    height: 24px;
-    box-sizing: border-box;
+    font-size: 18px;
+    line-height: 16px;
+    height: 16px;
+    align-items: center;
   }
 
   .star {
     width: 12px;
     height: 12px;
-    background-color: #f0f0f0;
     flex-shrink: 0;
-  }
-
-  .artist-details .duration {
-    width: 35%;
   }
 </style>
