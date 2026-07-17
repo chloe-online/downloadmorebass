@@ -163,10 +163,8 @@
     font-size: 11px;
     font-weight: bold;
     color: #333;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
-    border: 1px solid #d3d3d3;
+    background: transparent url(/ui-sprite.webp) no-repeat scroll 0 -175px;
+    border: 1px solid #c6b070;
     border-radius: 3px;
     padding: 4px 10px;
     text-decoration: none;
@@ -176,7 +174,7 @@
   }
 
   .subscribe-button:hover {
-    border-color: #999;
+    border-color: #9e864a;
   }
 
   .subscribe-backdrop {

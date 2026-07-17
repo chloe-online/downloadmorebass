@@ -73,9 +73,7 @@
     padding: 0 8px 0 0;
     box-sizing: border-box;
     overflow: hidden;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      repeat-x scroll 0 -64px;
+    background: transparent url(/ui-sprite.webp) repeat-x scroll 0 -64px;
     border-radius: 2px;
     border: 1px solid #999;
   }
@@ -147,9 +145,7 @@
     padding: 0 10px;
     border: 1px solid #d3d3d3;
     border-radius: 3px;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
+    background: transparent url(/ui-sprite.webp) no-repeat scroll 0 -137px;
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
     color: #333;
     font-family: Arial, Helvetica, sans-serif;
