@@ -34,6 +34,10 @@
     .site-footer {
       flex-direction: column;
       gap: 0.5rem;
+      border-left: none;
+      border-right: none;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
     }
 
     .site-footer p {

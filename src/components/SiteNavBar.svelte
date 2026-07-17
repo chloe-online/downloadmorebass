@@ -164,6 +164,14 @@
     border-color: #666;
   }
 
+  @media (max-width: 768px) {
+    .bar-body {
+      border-left: none;
+      border-right: none;
+      border-radius: 0;
+    }
+  }
+
   @media (max-width: 480px) {
     .bar-body {
       gap: 4px;
