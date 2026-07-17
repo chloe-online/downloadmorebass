@@ -7,6 +7,7 @@
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
   import Song from "../components/Song.svelte";
+  import ErrorPanel from "../components/ErrorPanel.svelte";
   import { fetchComments } from "../lib/api";
   import { navigate, listenPath, homePath } from "../lib/router";
   import { findTrackBySlug, getTracks, trackSlug } from "../lib/tracks";
@@ -19,22 +20,46 @@
   let track = $state<Track | undefined>();
   let artistProfile = $state<ArtistProfile | undefined>();
   let relatedTracks = $state<Track[]>([]);
+  let sameGenreTracks = $state<Track[]>([]);
   let comments = $state<Comment[]>([]);
   let loading = $state(true);
   let commentsLoading = $state(false);
   let error = $state<string | null>(null);
   let commentsError = $state<string | null>(null);
   let moreBassExpanded = $state(false);
+  let sameGenreExpanded = $state(false);
   let trackInfoExpanded = $state(false);
+  let reloadToken = $state(0);
+
+  const isNotFound = $derived(
+    error === "Track not found." ||
+      error === "No track selected." ||
+      (!loading && !track && !error),
+  );
+
+  function applySidebarDefaults() {
+    const desktop = !window.matchMedia("(max-width: 768px)").matches;
+    moreBassExpanded = desktop;
+    sameGenreExpanded = desktop;
+  }
 
   $effect(() => {
     slug;
-    moreBassExpanded = false;
     trackInfoExpanded = false;
+    applySidebarDefaults();
+
+    const mq = window.matchMedia("(max-width: 768px)");
+    const onViewportChange = () => applySidebarDefaults();
+    mq.addEventListener("change", onViewportChange);
+    return () => mq.removeEventListener("change", onViewportChange);
   });
 
   function toggleMoreBass() {
     moreBassExpanded = !moreBassExpanded;
+  }
+
+  function toggleSameGenre() {
+    sameGenreExpanded = !sameGenreExpanded;
   }
 
   function toggleTrackInfo() {
@@ -58,13 +83,19 @@
     navigate(listenPath(relatedSlug));
   }
 
+  function retryLoad() {
+    reloadToken += 1;
+  }
+
   $effect(() => {
     const currentSlug = slug;
+    reloadToken;
     window.scrollTo({ top: 0 });
     loading = true;
     error = null;
     track = undefined;
     relatedTracks = [];
+    sameGenreTracks = [];
 
     if (!currentSlug) {
       error = "No track selected.";
@@ -80,9 +111,22 @@
 
         track = findTrackBySlug(currentSlug);
         artistProfile = data.user;
-        relatedTracks = data.tracks.filter(
+
+        const genreKey = track?.genre.trim().toLowerCase() ?? "";
+        const others = data.tracks.filter(
           (item) => trackSlug(item.url) !== currentSlug,
         );
+
+        sameGenreTracks = genreKey
+          ? others.filter(
+              (item) => item.genre.trim().toLowerCase() === genreKey,
+            )
+          : [];
+        relatedTracks = genreKey
+          ? others.filter(
+              (item) => item.genre.trim().toLowerCase() !== genreKey,
+            )
+          : others;
 
         if (!track) {
           error = "Track not found.";
@@ -146,8 +190,25 @@
     {#if loading}
       <WatchPageSkeleton />
     {:else if error || !track}
-      <p class="status error">{error ?? "Track not found."}</p>
-      <button class="yt-button" onclick={goHome}>Go home</button>
+      <div class="watch-error">
+        {#if isNotFound}
+          <ErrorPanel
+            title="Oops, track not found."
+            message="This track doesn't exist (or maybe it never did). Head home to find more bass."
+            contactPrompt="Think this is a bug?"
+            actionLabel="Go home"
+            actionHref={homePath()}
+            onAction={goHome}
+          />
+        {:else}
+          <ErrorPanel
+            title="Oh uh, something went wrong."
+            message="I'm sorry, but an error occurred while loading this track. Please try again in a bit."
+            actionLabel="Try again"
+            onAction={retryLoad}
+          />
+        {/if}
+      </div>
     {:else}
       <div class="watch-layout">
         <section class="primary">
@@ -235,7 +296,8 @@
             onkeydown={handleTrackInfoKeydown}
           >
             <div class="track-info-header">
-              <span class="views">{track.listens.toLocaleString()} listens</span>
+              <span class="views">{track.listens.toLocaleString()} listens</span
+              >
               {#if track.publishedAt}
                 <span class="published">
                   {#if trackInfoExpanded}
@@ -250,8 +312,46 @@
               text={track.description || "No description provided."}
               lines={3}
               expanded={trackInfoExpanded}
+              showToggle={false}
               onToggle={toggleTrackInfo}
             />
+            {#if trackInfoExpanded && (track.genre || track.tags.length > 0)}
+              <div class="track-tags">
+                {#if track.genre}
+                  <a
+                    class="track-tag track-tag--genre"
+                    href={homePath(track.genre)}
+                    onclick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      navigate(homePath(track?.genre ?? "all"));
+                    }}>{track.genre}</a
+                  >
+                {/if}
+                {#each track.tags as tag (tag)}
+                  <a
+                    class="track-tag"
+                    href={homePath(tag)}
+                    onclick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      navigate(homePath(tag));
+                    }}>{tag}</a
+                  >
+                {/each}
+              </div>
+            {/if}
+            <p class="track-info-toggle-line">
+              (<button
+                type="button"
+                class="track-info-toggle"
+                onclick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  toggleTrackInfo();
+                }}>{trackInfoExpanded ? "less" : "more"}</button
+              >)
+            </p>
           </div>
 
           <Comments
@@ -263,61 +363,125 @@
         </section>
 
         <aside class="sidebar">
-          <div class="more-bass" class:expanded={moreBassExpanded}>
-            <button
-              type="button"
-              class="sidebar-title more-bass-toggle"
-              aria-expanded={moreBassExpanded}
-              onclick={toggleMoreBass}
-            >
-              <span>More bass</span>
-              <span class="more-bass-hint"
-                >{moreBassExpanded ? "less" : "more"}</span
+          {#if sameGenreTracks.length > 0}
+            <div class="sidebar-section" class:expanded={sameGenreExpanded}>
+              <button
+                type="button"
+                class="sidebar-title sidebar-section-toggle"
+                aria-expanded={sameGenreExpanded}
+                onclick={toggleSameGenre}
               >
-            </button>
-            <div class="more-bass-body">
-              <ul class="related-list related-list--desktop">
-                {#each relatedTracks as related (related.url)}
-                  {@const relatedSlug = trackSlug(related.url)}
-                  <li>
-                    <a
-                      class="related-item"
-                      href={listenPath(relatedSlug)}
-                      onclick={(event) => openTrack(event, relatedSlug)}
-                    >
-                      <img src={related.cover} alt={related.title} />
-                      <div class="related-info">
-                        <span class="related-title">{related.title}</span>
-                        <span class="related-meta"
-                          >{related.artist} · {related.listens.toLocaleString()}
-                          listens</span
-                        >
-                        <span class="related-duration">{related.duration}</span>
-                      </div>
-                    </a>
-                  </li>
-                {/each}
-              </ul>
-              <ul class="related-list related-list--mobile">
-                {#each relatedTracks as related (related.url)}
-                  <li>
-                    <Song
-                      cover={related.cover}
-                      title={related.title}
-                      description={related.description}
-                      duration={related.duration}
-                      artist={related.artist}
-                      listens={related.listens}
-                      artistUrl={related.artistUrl}
-                      url={related.url}
-                      stars={related.stars}
-                      isNew={related.isNew}
-                    />
-                  </li>
-                {/each}
-              </ul>
+                <span>More {track?.genre ?? "genre"}</span>
+                <span class="sidebar-section-hint"
+                  >{sameGenreExpanded ? "less" : "more"}</span
+                >
+              </button>
+              <div class="sidebar-section-body">
+                <ul class="related-list related-list--desktop">
+                  {#each sameGenreTracks as related (related.url)}
+                    {@const relatedSlug = trackSlug(related.url)}
+                    <li>
+                      <a
+                        class="related-item"
+                        href={listenPath(relatedSlug)}
+                        onclick={(event) => openTrack(event, relatedSlug)}
+                      >
+                        <img src={related.cover} alt={related.title} />
+                        <div class="related-info">
+                          <span class="related-title">{related.title}</span>
+                          <span class="related-meta"
+                            >{related.artist} · {related.listens.toLocaleString()}
+                            listens</span
+                          >
+                          <span class="related-duration"
+                            >{related.duration}</span
+                          >
+                        </div>
+                      </a>
+                    </li>
+                  {/each}
+                </ul>
+                <ul class="related-list related-list--mobile">
+                  {#each sameGenreTracks as related (related.url)}
+                    <li>
+                      <Song
+                        cover={related.cover}
+                        title={related.title}
+                        description={related.description}
+                        duration={related.duration}
+                        artist={related.artist}
+                        listens={related.listens}
+                        artistUrl={related.artistUrl}
+                        url={related.url}
+                        stars={related.stars}
+                        isNew={related.isNew}
+                      />
+                    </li>
+                  {/each}
+                </ul>
+              </div>
             </div>
-          </div>
+          {/if}
+
+          {#if relatedTracks.length > 0}
+            <div class="sidebar-section" class:expanded={moreBassExpanded}>
+              <button
+                type="button"
+                class="sidebar-title sidebar-section-toggle"
+                aria-expanded={moreBassExpanded}
+                onclick={toggleMoreBass}
+              >
+                <span>More bass</span>
+                <span class="sidebar-section-hint"
+                  >{moreBassExpanded ? "less" : "more"}</span
+                >
+              </button>
+              <div class="sidebar-section-body">
+                <ul class="related-list related-list--desktop">
+                  {#each relatedTracks as related (related.url)}
+                    {@const relatedSlug = trackSlug(related.url)}
+                    <li>
+                      <a
+                        class="related-item"
+                        href={listenPath(relatedSlug)}
+                        onclick={(event) => openTrack(event, relatedSlug)}
+                      >
+                        <img src={related.cover} alt={related.title} />
+                        <div class="related-info">
+                          <span class="related-title">{related.title}</span>
+                          <span class="related-meta"
+                            >{related.artist} · {related.listens.toLocaleString()}
+                            listens</span
+                          >
+                          <span class="related-duration"
+                            >{related.duration}</span
+                          >
+                        </div>
+                      </a>
+                    </li>
+                  {/each}
+                </ul>
+                <ul class="related-list related-list--mobile">
+                  {#each relatedTracks as related (related.url)}
+                    <li>
+                      <Song
+                        cover={related.cover}
+                        title={related.title}
+                        description={related.description}
+                        duration={related.duration}
+                        artist={related.artist}
+                        listens={related.listens}
+                        artistUrl={related.artistUrl}
+                        url={related.url}
+                        stars={related.stars}
+                        isNew={related.isNew}
+                      />
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            </div>
+          {/if}
         </aside>
         <div class="subwoofer-footer">
           {#each Array(3) as _, i (i)}
@@ -398,13 +562,62 @@
     white-space: nowrap;
   }
 
-  .status {
-    font-family: Arial, sans-serif;
-    font-size: 14px;
+  .track-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    min-width: 0;
   }
 
-  .status.error {
-    color: #b00020;
+  .track-tag {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #03c;
+    text-decoration: none;
+    line-height: 1.25;
+  }
+
+  .track-tag:hover {
+    text-decoration: underline;
+  }
+
+  .track-tag--genre {
+    font-weight: bold;
+    color: #333;
+  }
+
+  .track-tag--genre:hover {
+    color: #03c;
+  }
+
+  .track-info-toggle-line {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .track-info-toggle {
+    display: inline;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: bold;
+    color: #03c;
+    cursor: pointer;
+    text-decoration: dotted underline;
+  }
+
+  .track-info-toggle:hover {
+    text-decoration: underline;
+  }
+
+  .watch-error {
+    width: 100%;
+    max-width: var(--song-max);
   }
 
   .watch-layout {
@@ -666,29 +879,39 @@
     color: #333;
   }
 
-  .more-bass-toggle {
+  .sidebar-section-toggle {
     display: flex;
     align-items: baseline;
-    justify-content: flex-start;
+    justify-content: space-between;
     gap: 0.5rem;
     width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 0.5rem 0;
     border: none;
+    border-bottom: 1px solid #ccc;
     background: none;
-    cursor: default;
-    pointer-events: none;
+    cursor: pointer;
   }
 
-  .more-bass-hint {
-    display: none;
+  .sidebar-section-hint {
+    display: inline;
     font-size: 12px;
     color: #03c;
     text-decoration: none;
   }
 
-  .more-bass-body {
+  .sidebar-section-hint:hover,
+  .sidebar-section-toggle:hover .sidebar-section-hint {
+    text-decoration: underline;
+  }
+
+  .sidebar-section:not(.expanded) .sidebar-section-body {
+    display: none;
+  }
+
+  .sidebar-section.expanded .sidebar-section-body {
     display: block;
+    padding-top: 0.5rem;
   }
 
   .related-list {
@@ -744,24 +967,6 @@
     font-family: Arial, sans-serif;
     font-size: 11px;
     color: #666;
-  }
-  :global(.yt-button),
-  .yt-button {
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-    background: transparent
-      url(https://web.archive.org/web/20080416013730im_/http://s.ytimg.com/yt/img/master-vfl37165.gif)
-      no-repeat scroll 0 -137px;
-    border: 1px solid #d3d3d3;
-    border-radius: 3px;
-    cursor: pointer;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
-    padding: 4px 10px;
-    text-decoration: none;
-    display: inline-block;
   }
 
   .subwoofer-footer {
@@ -833,32 +1038,6 @@
 
     .related-list--mobile li:not(:first-child) {
       border-top: 1px dotted #bbb;
-    }
-
-    .more-bass-toggle {
-      cursor: pointer;
-      pointer-events: auto;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .more-bass-hint {
-      display: inline;
-    }
-
-    .more-bass-hint:hover,
-    .more-bass-toggle:hover .more-bass-hint {
-      text-decoration: underline;
-    }
-
-    .more-bass:not(.expanded) .more-bass-body {
-      display: none;
-    }
-
-    .more-bass.expanded .more-bass-body {
-      display: block;
-      padding-top: 0.5rem;
     }
 
     .subwoofer-footer {

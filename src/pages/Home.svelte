@@ -5,8 +5,10 @@
   import HomePageSkeleton from "../components/HomePageSkeleton.svelte";
   import SiteMainBar from "../components/SiteMainBar.svelte";
   import FeaturedArtistSection from "../components/FeaturedArtistSection.svelte";
+  import PopularTagsSection from "../components/PopularTagsSection.svelte";
   import SiteHeader from "../components/SiteHeader.svelte";
   import SiteFooter from "../components/SiteFooter.svelte";
+  import ErrorPanel from "../components/ErrorPanel.svelte";
   import { getTracks } from "../lib/tracks";
   import { getLocation, subscribe, type Location } from "../lib/router";
   import type { ArtistProfile, Track } from "../../shared/types";
@@ -168,30 +170,12 @@
       <div class="home-layout">
         <div class="tracks-column">
           {#if showTracksError}
-            <div class="tracks-error" role="alert">
-              <h2 class="tracks-error-title">Oh uh, something went wrong.</h2>
-              <p class="tracks-error-message">
-                I'm sorry, but an error occurred while loading the tracks. The
-                playlist should be back soon, please try again in a bit.
-              </p>
-              <div class="tracks-error-actions">
-                <button
-                  type="button"
-                  class="tracks-error-retry"
-                  onclick={() => loadTracks()}
-                >
-                  Try again
-                </button>
-                <p class="tracks-error-contact">
-                  Still broken?
-                  <a
-                    href="https://instagram.com/chloemusic8008"
-                    target="_blank"
-                    rel="noreferrer">Tell Chloe to fix it</a
-                  >
-                </p>
-              </div>
-            </div>
+            <ErrorPanel
+              title="Oh uh, something went wrong."
+              message="I'm sorry, but an error occurred while loading the tracks. The playlist should be back soon, please try again in a bit."
+              actionLabel="Try again"
+              onAction={() => loadTracks()}
+            />
           {:else if searchQuery}
             <SearchResults {tracks} query={searchQuery} />
           {:else}
@@ -277,6 +261,9 @@
               <h2>Featured artist</h2>
               <FeaturedArtistSection artist={artistProfile} />
             </div>
+          {/if}
+          {#if tracks.length > 0}
+            <PopularTagsSection {tracks} />
           {/if}
         </aside>
       </div>
@@ -409,64 +396,6 @@
     text-decoration: none;
     cursor: default;
     z-index: 1;
-  }
-
-  .tracks-error {
-    border: 1px solid #999;
-    background: #f9f9f9;
-    padding: 1.25rem 1rem;
-    text-align: center;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .tracks-error-title {
-    margin: 0 0 0.75rem;
-    font-size: 19px;
-    font-weight: bold;
-    color: #333;
-  }
-
-  .tracks-error-message {
-    margin: 0 0 0.5rem;
-    font-size: 13px;
-    line-height: 1.4;
-    color: #333;
-  }
-
-  .tracks-error-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #ddd;
-  }
-
-  .tracks-error-retry {
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    font-weight: bold;
-    color: #03c;
-    text-decoration: underline;
-    cursor: pointer;
-    background: #eee;
-    border: 1px solid #999;
-    border-radius: 3px;
-    padding: 6px 14px;
-    line-height: 1.2;
-  }
-
-  .tracks-error-retry:hover {
-    background: #f5f5f5;
-    text-decoration: none;
-  }
-
-  .tracks-error-contact {
-    margin: 0;
-    font-size: 12px;
-    color: #666;
   }
 
   .playlist ul {

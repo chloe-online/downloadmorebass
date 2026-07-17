@@ -32,6 +32,8 @@ export interface Track {
   stars: number;
   isNew: boolean;
   publishedAt: string;
+  genre: string;
+  tags: string[];
 }
 
 export interface Comment {

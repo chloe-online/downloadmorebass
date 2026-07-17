@@ -47,6 +47,8 @@ interface SoundCloudTrack {
   permalink_url: string;
   artwork_url: string | null;
   created_at: string;
+  genre?: string | null;
+  tag_list?: string | null;
   user: {
     username: string;
     permalink_url: string;
@@ -199,6 +201,29 @@ function calculateStars(likes: number, listens: number): number {
   return Math.min(5, Math.max(0, stars));
 }
 
+/** Parse SoundCloud's space/quote-delimited tag_list into unique tags. */
+function parseTagList(tagList: string): string[] {
+  const tags: string[] = [];
+  const seen = new Set<string>();
+  const pattern = /"([^"]+)"|(\S+)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(tagList)) !== null) {
+    const raw = (match[1] ?? match[2] ?? "").trim();
+    if (!raw) {
+      continue;
+    }
+    const key = raw.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    tags.push(raw);
+  }
+
+  return tags;
+}
+
 function formatAvatarUrl(avatarUrl: string | null): string {
   if (!avatarUrl) {
     return "";
@@ -300,6 +325,8 @@ function toTrack(track: SoundCloudTrack): Track {
     stars: calculateStars(likes, listens),
     isNew: isRecentlyCreated(track.created_at),
     publishedAt: track.created_at,
+    genre: track.genre?.trim() ?? "",
+    tags: parseTagList(track.tag_list ?? ""),
   };
 }
 

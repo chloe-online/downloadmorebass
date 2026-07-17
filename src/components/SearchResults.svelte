@@ -19,7 +19,7 @@
     const q = query.toLowerCase();
     const filtered = tracks.filter((track) => {
       const haystack =
-        `${track.title} ${track.artist} ${track.description}`.toLowerCase();
+        `${track.title} ${track.artist} ${track.description} ${track.genre} ${track.tags.join(" ")}`.toLowerCase();
       return haystack.includes(q);
     });
 
