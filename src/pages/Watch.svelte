@@ -797,7 +797,6 @@
     padding: 0;
     line-height: 0.7;
     height: 0.7em;
-    overflow: hidden;
   }
 
   .rating .filled {
