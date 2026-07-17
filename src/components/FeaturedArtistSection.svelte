@@ -49,83 +49,100 @@
   }
 </script>
 
-<section class="featured-artist">
-  <div class="artist-header">
-    {#if artist.avatarUrl}
-      <a
-        class="avatar-link"
-        href={artist.permalinkUrl}
-        target="_blank"
-        rel="noreferrer"
-      >
-        <img
-          class="avatar"
-          src={artist.avatarUrl}
-          alt={artist.username}
-          width="72"
-          height="72"
-        />
-      </a>
-    {:else}
-      <span class="avatar-fallback"
-        >{artist.username.slice(0, 1).toUpperCase()}</span
-      >
-    {/if}
-
-    <div class="artist-details">
-      <div class="artist-meta">
+<div class="featured-artist-container">
+  <h2>Featured artist</h2>
+  <section class="featured-artist">
+    <div class="artist-header">
+      {#if artist.avatarUrl}
         <a
-          class="username"
+          class="avatar-link"
           href={artist.permalinkUrl}
           target="_blank"
           rel="noreferrer"
         >
-          {artist.username}
+          <img
+            class="avatar"
+            src={artist.avatarUrl}
+            alt={artist.username}
+            width="72"
+            height="72"
+          />
         </a>
-        <span class="stat"
-          >Followers: {artist.followersCount.toLocaleString()}</span
+      {:else}
+        <span class="avatar-fallback"
+          >{artist.username.slice(0, 1).toUpperCase()}</span
         >
-        {#if locationLabel}
-          <span class="stat location">{locationLabel}</span>
-        {/if}
-      </div>
+      {/if}
 
-      <div class="subscribe-socials-container">
-        <SubscribeButton inputId="featured-artist-subscribe-email" />
+      <div class="artist-details">
+        <div class="artist-meta">
+          <a
+            class="username"
+            href={artist.permalinkUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {artist.username}
+          </a>
+          <span class="stat"
+            >Followers: {artist.followersCount.toLocaleString()}</span
+          >
+          {#if locationLabel}
+            <span class="stat location">{locationLabel}</span>
+          {/if}
+        </div>
 
-        <div class="socials">
-          {#each artist.webProfiles as profile (profile.url)}
-            {@const icon = socialIcon(profile)}
-            {@const label = socialLabel(profile)}
-            <a
-              class="social-link"
-              href={profile.url}
-              target="_blank"
-              rel="noreferrer"
-              title={label}
-            >
-              {#if icon}
-                <img
-                  class="social-icon"
-                  src={icon}
-                  alt=""
-                  width="16"
-                  height="16"
-                />
-              {/if}
-            </a>
-          {/each}
+        <div class="subscribe-socials-container">
+          <SubscribeButton inputId="featured-artist-subscribe-email" />
+
+          <div class="socials">
+            {#each artist.webProfiles as profile (profile.url)}
+              {@const icon = socialIcon(profile)}
+              {@const label = socialLabel(profile)}
+              <a
+                class="social-link"
+                href={profile.url}
+                target="_blank"
+                rel="noreferrer"
+                title={label}
+              >
+                {#if icon}
+                  <img
+                    class="social-icon"
+                    src={icon}
+                    alt=""
+                    width="16"
+                    height="16"
+                  />
+                {/if}
+              </a>
+            {/each}
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  {#if artist.description}
-    <p class="bio">{artist.description}</p>
-  {/if}
-</section>
+    {#if artist.description}
+      <p class="bio">{artist.description}</p>
+    {/if}
+  </section>
+</div>
 
 <style>
+  .featured-artist-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: bold;
+    color: #333;
+  }
+
   .featured-artist {
     border: 1px solid #ccc;
     background: #f9f9f9;
@@ -264,6 +281,10 @@
   }
 
   @media (max-width: 768px) {
+    .featured-artist-container {
+      gap: 0.25rem;
+    }
+
     .featured-artist {
       padding: 0.5rem;
     }

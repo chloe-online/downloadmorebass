@@ -3,6 +3,7 @@
   import SearchResultsSkeleton from "./SearchResultsSkeleton.svelte";
   import SiteMainBarSkeleton from "./SiteMainBarSkeleton.svelte";
   import FeaturedArtistSectionSkeleton from "./FeaturedArtistSectionSkeleton.svelte";
+  import PopularTagsSectionSkeleton from "./PopularTagsSectionSkeleton.svelte";
 
   let { searchQuery = null }: { searchQuery?: string | null } = $props();
 </script>
@@ -16,9 +17,14 @@
     {/if}
   </div>
 
-  <aside class="site-sidebar">
-    <SiteMainBarSkeleton />
-    <FeaturedArtistSectionSkeleton />
+  <aside class="site-sidebar has-tags">
+    <div class="sidebar-primary">
+      <SiteMainBarSkeleton />
+      <FeaturedArtistSectionSkeleton />
+    </div>
+    <div class="sidebar-tags">
+      <PopularTagsSectionSkeleton />
+    </div>
   </aside>
 
   <div class="back-to-top-container">
@@ -59,6 +65,17 @@
     top: 1rem;
   }
 
+  .sidebar-primary {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .sidebar-tags {
+    min-width: 0;
+  }
+
   .back-to-top-container {
     grid-area: back;
     display: flex;
@@ -85,9 +102,23 @@
       max-width: 100%;
     }
 
-    .site-sidebar {
+    .site-sidebar.has-tags {
       position: static;
       width: 100%;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .site-sidebar.has-tags .sidebar-primary {
+      flex: 0 1 auto;
+      width: max-content;
+      max-width: 48%;
+      gap: 0.5rem;
+    }
+
+    .site-sidebar.has-tags .sidebar-tags {
+      flex: 1 1 0;
     }
   }
 </style>

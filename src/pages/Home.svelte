@@ -254,10 +254,7 @@
           <div class="sidebar-primary">
             <SiteMainBar />
             {#if artistProfile}
-              <div class="featured-artist-container">
-                <h2>Featured artist</h2>
-                <FeaturedArtistSection artist={artistProfile} />
-              </div>
+              <FeaturedArtistSection artist={artistProfile} />
             {/if}
           </div>
           {#if tracks.length > 0}
@@ -331,8 +328,7 @@
     top: 1rem;
   }
 
-  .sidebar-primary,
-  .featured-artist-container {
+  .sidebar-primary {
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -470,10 +466,6 @@
 
     .site-sidebar.has-tags .sidebar-tags {
       flex: 1 1 0;
-    }
-
-    .featured-artist-container {
-      gap: 0.25rem;
     }
   }
 
