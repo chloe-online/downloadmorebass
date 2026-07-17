@@ -23,11 +23,33 @@
 
   let email = $state("");
   let website = $state("");
+  let submittedEmail = $state("");
   let turnstileToken = $state("");
   let status = $state<"idle" | "loading" | "success" | "error">("idle");
+  let resendStatus = $state<"idle" | "loading" | "sent">("idle");
   let errorMessage = $state("");
   let turnstileEl = $state<HTMLDivElement | null>(null);
   let widgetId = $state<string | null>(null);
+  let turnstileScale = $state(1);
+  let turnstileHeight = $state<number | null>(null);
+  let fitObserver: ResizeObserver | null = null;
+
+  function fitTurnstile() {
+    if (!turnstileEl) {
+      return;
+    }
+    const widget = turnstileEl.firstElementChild as HTMLElement | null;
+    const naturalWidth = widget?.offsetWidth ?? 0;
+    const naturalHeight = widget?.offsetHeight ?? 0;
+    if (!widget || naturalWidth === 0) {
+      turnstileScale = 1;
+      turnstileHeight = null;
+      return;
+    }
+    const available = turnstileEl.clientWidth;
+    turnstileScale = available > 0 ? Math.min(1, available / naturalWidth) : 1;
+    turnstileHeight = naturalHeight * turnstileScale;
+  }
 
   function resetTurnstile() {
     turnstileToken = "";
@@ -46,10 +68,11 @@
       action: "subscribe",
       theme: "light",
       size: "flexible",
-      // Keep the widget hidden unless Cloudflare needs a challenge.
+      // Keep always-visible while testing sizing; switch back to interaction-only later.
       appearance: "interaction-only",
       callback: (token) => {
         turnstileToken = token;
+        fitTurnstile();
       },
       "error-callback": () => {
         turnstileToken = "";
@@ -58,6 +81,17 @@
         turnstileToken = "";
       },
     });
+
+    // The widget mounts asynchronously and resizes when a challenge appears,
+    // so keep it scaled to fit the container.
+    fitObserver?.disconnect();
+    fitObserver = new ResizeObserver(() => fitTurnstile());
+    fitObserver.observe(turnstileEl);
+    const widget = turnstileEl.firstElementChild;
+    if (widget) {
+      fitObserver.observe(widget);
+    }
+    fitTurnstile();
   }
 
   function loadTurnstileScript() {
@@ -97,6 +131,8 @@
     loadTurnstileScript();
     return () => {
       document.removeEventListener(turnstileReadyEvent, renderTurnstile);
+      fitObserver?.disconnect();
+      fitObserver = null;
       if (widgetId && window.turnstile) {
         window.turnstile.remove(widgetId);
       }
@@ -123,7 +159,9 @@
         throw new Error("Complete the verification check first");
       }
       await subscribeEmail(email, turnstileToken, website);
+      submittedEmail = email;
       status = "success";
+      resendStatus = "idle";
       email = "";
       website = "";
     } catch (error) {
@@ -134,11 +172,53 @@
       resetTurnstile();
     }
   }
+
+  async function onResend() {
+    if (resendStatus === "loading" || !submittedEmail) {
+      return;
+    }
+
+    errorMessage = "";
+    resendStatus = "loading";
+
+    try {
+      if (!turnstileToken) {
+        throw new Error("Complete the verification check first");
+      }
+      await subscribeEmail(submittedEmail, turnstileToken, website);
+      resendStatus = "sent";
+    } catch (error) {
+      resendStatus = "idle";
+      errorMessage =
+        error instanceof Error ? error.message : "Something went wrong";
+    } finally {
+      resetTurnstile();
+    }
+  }
 </script>
 
-<form class="subscribe-form" class:popup={variant === "popup"} onsubmit={onSubmit}>
+<form
+  class="subscribe-form"
+  class:popup={variant === "popup"}
+  onsubmit={onSubmit}
+>
   {#if status === "success"}
     <p class="subscribe-message">{successMessage}</p>
+    <p class="subscribe-resend">
+      {#if resendStatus === "sent"}
+        Sent again — check your inbox.
+      {:else}
+        Not seeing the email?
+        <button
+          type="button"
+          class="subscribe-resend-button"
+          onclick={onResend}
+          disabled={resendStatus === "loading" || !siteKey || !turnstileToken}
+        >
+          {resendStatus === "loading" ? "Sending…" : "Send again"}
+        </button>
+      {/if}
+    </p>
   {:else}
     <p class="subscribe-description">{description}</p>
     <div class="subscribe-row">
@@ -171,14 +251,20 @@
       aria-hidden="true"
       bind:value={website}
     />
-    {#if siteKey}
-      <div class="turnstile" bind:this={turnstileEl}></div>
-    {:else}
-      <p class="subscribe-error">Subscribe is unavailable right now</p>
-    {/if}
-    {#if status === "error"}
-      <p class="subscribe-error">{errorMessage}</p>
-    {/if}
+  {/if}
+  {#if siteKey}
+    <div
+      class="turnstile"
+      bind:this={turnstileEl}
+      style={`--turnstile-scale:${turnstileScale};${
+        turnstileHeight !== null ? `height:${turnstileHeight}px;` : ""
+      }`}
+    ></div>
+  {:else if status !== "success"}
+    <p class="subscribe-error">Subscribe is unavailable right now</p>
+  {/if}
+  {#if status === "error"}
+    <p class="subscribe-error">{errorMessage}</p>
   {/if}
 </form>
 
@@ -206,6 +292,37 @@
   .subscribe-message {
     color: #333;
     margin-bottom: 0;
+  }
+
+  .subscribe-resend {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: #666;
+    margin: 0;
+    width: 100%;
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .subscribe-resend-button {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    font-weight: bold;
+    color: #03c;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .subscribe-resend-button:hover:not(:disabled) {
+    text-decoration: none;
+  }
+
+  .subscribe-resend-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   .subscribe-row {
@@ -257,12 +374,20 @@
   .turnstile {
     display: flex;
     justify-content: center;
+    align-items: flex-start;
     width: 100%;
     min-height: 0;
+    overflow: hidden;
   }
 
   .turnstile:empty {
     display: none;
+  }
+
+  .turnstile :global(> *) {
+    flex-shrink: 0;
+    transform: scale(var(--turnstile-scale, 1));
+    transform-origin: top center;
   }
 
   .subscribe-error {
@@ -277,7 +402,8 @@
 
   .popup .subscribe-description,
   .popup .subscribe-message,
-  .popup .subscribe-error {
+  .popup .subscribe-error,
+  .popup .subscribe-resend {
     text-align: left;
     font-size: 11px;
     margin: 0;

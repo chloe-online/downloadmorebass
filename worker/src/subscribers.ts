@@ -140,7 +140,10 @@ function hoursFromNow(hours: number): string {
 }
 
 function nowSqlite(): string {
-  return new Date().toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
+  return new Date()
+    .toISOString()
+    .replace("T", " ")
+    .replace(/\.\d{3}Z$/, "");
 }
 
 function withinCooldown(sentAt: string | null): boolean {
@@ -383,7 +386,10 @@ export async function handleSubscribe(
     return jsonResponse(ok);
   }
 
-  if (existing.status === "pending" && withinCooldown(existing.confirmation_sent_at)) {
+  if (
+    existing.status === "pending" &&
+    withinCooldown(existing.confirmation_sent_at)
+  ) {
     return jsonResponse(ok);
   }
 
@@ -433,7 +439,7 @@ export async function handleConfirm(
   if (!row) {
     return htmlPage(
       "Confirmation link expired",
-      "<h1>This confirmation link is invalid or expired</h1><p>Request a new confirmation from the site footer.</p>",
+      "<h1>This confirmation link is invalid or expired</h1><p>Please subscribe and enter your email address again for a new link.</p>",
       400,
     );
   }
