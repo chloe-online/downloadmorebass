@@ -12,7 +12,7 @@
     box-sizing: border-box;
     margin-top: auto;
     padding: 1rem;
-    background-color: #f0f0f0;
+    background-color: var(--footer-bg);
     display: flex;
     flex-direction: row;
     justify-content: space-between;
