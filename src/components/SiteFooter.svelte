@@ -32,8 +32,6 @@
 
   @media (max-width: 768px) {
     .site-footer {
-      flex-direction: column;
-      gap: 0.5rem;
       border-left: none;
       border-right: none;
       border-top-left-radius: 0;
